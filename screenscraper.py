@@ -1,6 +1,9 @@
 import httplib
+import MySQLdb
+import datetime
+import time
+import random
 from xml.dom.minidom import parse, parseString
-
 
 class ScreenScraper():
     def __init__(self, equities):
@@ -10,7 +13,8 @@ class ScreenScraper():
         for equity in self.equities:
             screen_scrape = self.request_equity(equity)
             self.parse_equity(equity, screen_scrape)
-
+            self.persist_equity(equity)
+            time.sleep(random.randint(1, 10))
 
     def request_equity(self, equity):
         h1 = httplib.HTTPSConnection('www.google.com')
@@ -40,7 +44,48 @@ class ScreenScraper():
             field_value = child.attributes['content'].value
             if field_name == 'price':
                 print(equity.ticker + ' = ' + field_value)
+                equity.price = field_value
+            elif field_name == 'name':
+                equity.name = field_value
+            elif field_name == 'quoteTime':
+                equity.quote_time = field_value
 
+    def persist_equity(self, equity):
+        cnx = None
+        cursor = None
+        try:
+#       	    cnx = mysql.connector.connect(user='jimbob', password='finance',
+#                                          host='localhost',
+#                                          database='finance')
+#            cursor = cnx.cursor()
+            
+            # prepared statement for adding an equity snapshot
+            insert_equity_snapshot = ('INSERT INTO `equity_snapshot` (`ticker`, `name`, `exchange`, `date`, `price`) VALUES (%s, %s, %s, %s, %s)')
+
+#            for equity in self.equities:
+#                data_equity = (equity.ticker, 'name', equity.exchange, '2016-04-25', equity.price)
+#                cursor.execute(insert_equity_snapshot, data_equity)
+            cnx = MySQLdb.connect(host='localhost', # your host, usually localhost
+                     user='jimbob', # your username
+                     passwd='finance', # your password
+                     db='finance') # name of the data base
+            # always do this to set mysqldb to use utf-8 encoding rather than latin-1
+            cnx.set_character_set('utf8')
+            cursor = cnx.cursor()
+            cursor.execute('SET NAMES utf8;')
+            cursor.execute('SET CHARACTER SET utf8;')
+            cursor.execute('SET character_set_connection=utf8;')
+          
+            date_str = equity.quote_time[:10]
+            data_equity = equity.ticker, equity.name, equity.exchange, date_str, equity.price
+            print('Inserting ' + equity.ticker)
+            cursor.execute(insert_equity_snapshot, data_equity)
+               
+        finally:
+            cnx.commit()
+            cursor.close()
+            cnx.close()
+        
 
 class Equity():
     def __init__(self, exchange, ticker):
@@ -48,24 +93,69 @@ class Equity():
         self.ticker = ticker
 
 if __name__ == "__main__":
-    #h1.request("GET", '/finance?q=NASDAQ%3ASCTY')
-    #h1.request("GET", '/finance?q=NYSE%3AIBM')
-    #h1.request("GET", '/finance?q=NYSE%3ASVU')
-    #h1.request("GET", '/finance?q=ETR%3AVOW')
-    #h1.request("GET", '/finance?q=NYSE%3ADIS')
-    #h1.request("GET", '/finance?q=NYSE%3AT')
-    #h1.request("GET", '/finance?q=NYSE%3AGE')
-    #h1.request("GET", '/finance?q=NASDAQ%3ANFLX')
     stocks = []
-    stocks.append(Equity('NYES', 'GE'))
-    stocks.append(Equity('NASDAQ', 'SCTY'))
-    stocks.append(Equity('NYSE', 'IBM'))
-    stocks.append(Equity('NYSE', 'SVU'))
-    stocks.append(Equity('ETR', 'VOW'))
-    stocks.append(Equity('NYSE', 'DIS'))
-    stocks.append(Equity('NYSE', 'T'))
-    stocks.append(Equity('NASDAQ', 'NFLIX'))
 
+    # Energy
+    stocks.append(Equity('NASDAQ', 'SCTY'))
+    stocks.append(Equity('NYSE', 'TOT'))
+    stocks.append(Equity('NYSE', 'XOM'))
+    stocks.append(Equity('NYSE', 'CVX'))
+    stocks.append(Equity('NYSE', 'PSX'))
+
+    # Industrial
+    stocks.append(Equity('NYSE', 'GE'))
+    stocks.append(Equity('NYSE', 'MMM'))
+    stocks.append(Equity('NYSE', 'CAT'))
+    stocks.append(Equity('NYSE', 'DD'))
+
+    # Technology 
+    stocks.append(Equity('NASDAQ', 'AKAM'))
+    stocks.append(Equity('NYSE', 'IBM'))
+    stocks.append(Equity('NYSE', 'SAP'))
+    stocks.append(Equity('NASDAQ', 'AAPL'))
+    stocks.append(Equity('NASDAQ', 'CSCO'))
+    stocks.append(Equity('NASDAQ', 'INTC'))
+    stocks.append(Equity('NASDAQ', 'MSFT'))
+    stocks.append(Equity('NYSE', 'UTX'))
+
+    # Misc
+    stocks.append(Equity('NYSE', 'SVU'))
+    stocks.append(Equity('NYSE', 'DIS'))
+    stocks.append(Equity('NYSE', 'BA'))
+    stocks.append(Equity('NYSE', 'HD'))
+    stocks.append(Equity('NYSE', 'KO'))
+    stocks.append(Equity('NYSE', 'MCD'))
+    stocks.append(Equity('NYSE', 'NKE'))
+    stocks.append(Equity('NYSE', 'TRV'))
+    stocks.append(Equity('NYSE', 'WMT'))
+
+    # Automotive
+    stocks.append(Equity('NASDAQ', 'TSLA'))
+    stocks.append(Equity('ETR', 'VOW'))
+    stocks.append(Equity('NYSE', 'F'))
+
+    # Communications
+    stocks.append(Equity('NYSE', 'T'))
+    stocks.append(Equity('NYSE', 'VZ'))
+
+    # Media
+    stocks.append(Equity('NASDAQ', 'NFLX'))
+
+    # Financial
+    stocks.append(Equity('NYSE', 'JPM'))
+    stocks.append(Equity('NYSE', 'WFC'))
+    stocks.append(Equity('NYSE', 'GS'))
+    stocks.append(Equity('NYSE', 'AXP'))
+    stocks.append(Equity('NYSE', 'V'))
+
+    # Pharma
+    stocks.append(Equity('NYSE', 'PFE'))
+    stocks.append(Equity('NYSE', 'MRK'))
+
+    # Health
+    stocks.append(Equity('NYSE', 'JNJ'))
+    stocks.append(Equity('NYSE', 'UNH'))
+    stocks.append(Equity('NYSE', 'PG'))
 
     ss = ScreenScraper(stocks)
     ss.run()
