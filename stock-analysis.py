@@ -20,8 +20,16 @@ class Analyzer():
 
             min_price = None
             max_price = None
+            two_hundred_date_average = 0
+            num_price_points = 0
+            current_price = None
+            recent_high = 0.0
 
             for price_point in summary.price_points:
+
+                if num_price_points == 0:
+                    current_price = price_point.price
+
                 if min_price is None:
                     min_price = price_point.price
                 elif min_price > price_point.price:
@@ -32,11 +40,24 @@ class Analyzer():
                 elif max_price < price_point.price:
                     max_price = price_point.price
 
+                if num_price_points < 200:
+                    two_hundred_date_average += price_point.price
+
+                if recent_high < price_point.price and num_price_points < 100:
+                    recent_high = price_point.price
+
+                num_price_points += 1
+
+            summary.two_hundred_day_avg = two_hundred_date_average / num_price_points
             summary.min_price = min_price
             summary.max_price = max_price
+            summary.per_off_recent_high = 1 - current_price / recent_high
 
+            print(summary.ticker + ' current price = ' + str(current_price))
             print(summary.ticker + ' min price = ' + str(summary.min_price))
             print(summary.ticker + ' max price = ' + str(summary.max_price))
+            print(summary.ticker + ' 200 day avg = ' + str(summary.two_hundred_day_avg))
+            print(summary.ticker + ' % down from recent high = {:.2%}'.format(summary.per_off_recent_high) + '%')
 
 
 class PricePoint():
@@ -68,10 +89,15 @@ class Equity():
 
 if __name__ == "__main__":
     equities_to_analyze = []
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-26', 33.46))
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-27', 33.70))
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-28', 33.73))
     equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-29', 30.79))
+    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-28', 33.73))
+    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-27', 33.70))
+    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-26', 33.46))
+
+    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-29', 50.65))
+    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-28', 51.01))
+    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-27', 51.14))
+    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-26', 49.77))
 
     analyzer = Analyzer(equities_to_analyze)
     analyzer.analyze()
