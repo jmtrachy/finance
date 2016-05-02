@@ -4,10 +4,12 @@ class Analyzer():
         self.summaries = {}
         self.breakout_equities()
 
+        self.industry_summaries = {}
+
     def breakout_equities(self):
         for equity in self.equities:
             if equity.ticker not in self.summaries:
-                summary = Summary(equity.ticker, equity.name, equity.exchange)
+                summary = Summary(equity.ticker, equity.name, equity.exchange, equity.industry)
                 self.summaries[equity.ticker] = summary
             else:
                 summary = self.summaries[equity.ticker]
@@ -56,8 +58,8 @@ class Analyzer():
             print(summary.ticker + ' current price = ' + str(current_price))
             print(summary.ticker + ' min price = ' + str(summary.min_price))
             print(summary.ticker + ' max price = ' + str(summary.max_price))
-            print(summary.ticker + ' 200 day avg = ' + str(summary.two_hundred_day_avg))
-            print(summary.ticker + ' % down from recent high = {:.2%}'.format(summary.per_off_recent_high) + '%')
+            print(summary.ticker + ' 200 day avg = {:.4}'.format(summary.two_hundred_day_avg))
+            print(summary.ticker + ' % down from recent high = {:.2%}'.format(summary.per_off_recent_high))
 
 
 class PricePoint():
@@ -67,10 +69,11 @@ class PricePoint():
 
 
 class Summary():
-    def __init__(self, ticker, name, exchange):
+    def __init__(self, ticker, name, exchange, industry):
         self.ticker = ticker
         self.exchange = exchange
         self.name = name
+        self.industry = industry
         self.price_points = []
 
     def add_price_point(self, price_point):
@@ -78,26 +81,27 @@ class Summary():
 
 
 class Equity():
-    def __init__(self, snapshot_id, ticker, name, exchange, date, price):
+    def __init__(self, snapshot_id, ticker, name, exchange, date, price, industry):
         self.snapshot_id = snapshot_id
         self.ticker = ticker
         self.name = name
         self.exchange = exchange
         self.date = date
         self.price = price
+        self.industry = industry
 
 
 if __name__ == "__main__":
     equities_to_analyze = []
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-29', 30.79))
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-28', 33.73))
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-27', 33.70))
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-26', 33.46))
+    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-29', 30.79, 'Energy'))
+    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-28', 33.73, 'Energy'))
+    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-27', 33.70, 'Energy'))
+    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-26', 33.46, 'Energy'))
 
-    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-29', 50.65))
-    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-28', 51.01))
-    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-27', 51.14))
-    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-26', 49.77))
+    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-29', 50.65, 'Energy'))
+    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-28', 51.01, 'Energy'))
+    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-27', 51.14, 'Energy'))
+    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-26', 49.77, 'Energy'))
 
     analyzer = Analyzer(equities_to_analyze)
     analyzer.analyze()
