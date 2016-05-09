@@ -1,3 +1,5 @@
+import socket
+
 class Analyzer():
     def __init__(self, equities):
         self.equities = equities
@@ -60,7 +62,7 @@ class Analyzer():
             print(summary.ticker + ' max price = ' + str(summary.max_price))
             print(summary.ticker + ' 200 day avg = {:.4}'.format(summary.two_hundred_day_avg))
             print(summary.ticker + ' % down from recent high = {:.2%}'.format(summary.per_off_recent_high))
-
+            
 
 class PricePoint():
     def __init__(self, price, date):
@@ -105,3 +107,20 @@ if __name__ == "__main__":
 
     analyzer = Analyzer(equities_to_analyze)
     analyzer.analyze()
+
+    network = 'www.orangeshovel.com'
+    port = 6667
+    irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    irc.connect((network, port))
+
+    irc.send('NICK analyst\r\n')
+    irc.send('USER analyst analyst analyst :Python IRC\r\n')
+    irc.send('JOIN #pynerds\r\n')
+    irc.send('PRIVMSG #pynerds :Your daily stock report coming up...\r\n')
+
+    for summary_key in analyzer.summaries:
+        summary = analyzer.summaries[summary_key]
+        irc_string = 'PRIVMSG #pynerds :Ticker = ' + summary.ticker + '; name = ' + summary.name + '; max = ' + str(summary.max_price) + '; min = ' + str(summary.min_price) + '; % down from recent high = {:.2%}'.format(summary.per_off_recent_high) + '\r\n'
+        irc.send(irc_string)
+   
+    irc.send('QUIT\r\n') 
