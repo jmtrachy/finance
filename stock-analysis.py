@@ -1,4 +1,6 @@
 import socket
+import httplib
+import MySQLdb
 
 class Analyzer():
     def __init__(self, equities):
@@ -31,8 +33,7 @@ class Analyzer():
 
             for price_point in summary.price_points:
 
-                if num_price_points == 0:
-                    current_price = price_point.price
+                current_price = price_point.price
 
                 if min_price is None:
                     min_price = price_point.price
@@ -93,34 +94,89 @@ class Equity():
         self.industry = industry
 
 
-if __name__ == "__main__":
-    equities_to_analyze = []
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-29', 30.79, 'Energy'))
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-28', 33.73, 'Energy'))
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-27', 33.70, 'Energy'))
-    equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-26', 33.46, 'Energy'))
+class DAO():
+    @staticmethod
+    def get_equities():
+        equities = []
+    
+        cnx = None
+        cursor = None
+        try:
+            # prepared statement for adding an equity snapshot
+            select_equities = 'SELECT snapshot_id, ticker, name, exchange, date, price FROM equity_snapshot ORDER BY snapshot_id ASC'
 
-    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-29', 50.65, 'Energy'))
-    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-28', 51.01, 'Energy'))
-    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-27', 51.14, 'Energy'))
-    equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-26', 49.77, 'Energy'))
+            cnx = MySQLdb.connect(host='localhost', # your host, usually localhost
+                     user='jimbob', # your username
+                     passwd='finance', # your password
+                     db='finance') # name of the data base
+            # always do this to set mysqldb to use utf-8 encoding rather than latin-1
+            cnx.set_character_set('utf8')
+            cursor = cnx.cursor()
+            cursor.execute('SET NAMES utf8;')
+            cursor.execute('SET CHARACTER SET utf8;')
+            cursor.execute('SET character_set_connection=utf8;')
+
+            cursor.execute(select_equities)
+            results = cursor.fetchall()
+
+            for row in results:
+                equities.append(Equity(row[0], row[1], row[2], row[3], row[4], row[5], None))
+
+        except Exception as e:
+            print(type(e))
+            print(e)
+
+        finally:
+            cursor.close()
+            cnx.close()
+
+        return equities
+
+if __name__ == "__main__":
+    equities_to_analyze = DAO.get_equities() 
+    #equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-29', 30.79, 'Energy'))
+    #equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-28', 33.73, 'Energy'))
+    #equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-27', 33.70, 'Energy'))
+    #equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-26', 33.46, 'Energy'))
+
+    #equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-29', 50.65, 'Energy'))
+    #equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-28', 51.01, 'Energy'))
+    #equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-27', 51.14, 'Energy'))
+    #equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-26', 49.77, 'Energy'))
 
     analyzer = Analyzer(equities_to_analyze)
     analyzer.analyze()
 
-    network = 'www.orangeshovel.com'
-    port = 6667
-    irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    irc.connect((network, port))
+#    network = 'www.orangeshovel.com'
+#    port = 6667
+#    irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#    irc.connect((network, port))
 
-    irc.send('NICK analyst\r\n')
-    irc.send('USER analyst analyst analyst :Python IRC\r\n')
-    irc.send('JOIN #pynerds\r\n')
-    irc.send('PRIVMSG #pynerds :Your daily stock report coming up...\r\n')
+#    irc.send('NICK analyst\r\n')
+#    irc.send('USER analyst analyst analyst :Python IRC\r\n')
+#    irc.send('JOIN #pynerds\r\n')
+#    irc.send('PRIVMSG #pynerds :Your daily stock report coming up...\r\n')
+
+    f = open('security.properties', 'r')
+    slack_url = f.readline().strip()
+    print(slack_url)
+    headers = {'Content-type': 'application/json'}
 
     for summary_key in analyzer.summaries:
         summary = analyzer.summaries[summary_key]
-        irc_string = 'PRIVMSG #pynerds :Ticker = ' + summary.ticker + '; name = ' + summary.name + '; max = ' + str(summary.max_price) + '; min = ' + str(summary.min_price) + '; % down from recent high = {:.2%}'.format(summary.per_off_recent_high) + '\r\n'
-        irc.send(irc_string)
+        #irc_string = 'PRIVMSG #pynerds :Ticker = ' + summary.ticker + '; name = ' + summary.name + '; max = ' + str(summary.max_price) + '; min = ' + str(summary.min_price) + '; % down from recent high = {:.2%}'.format(summary.per_off_recent_high) + '\r\n'
+        if summary.per_off_recent_high > .1:
+            send_to_channel = ''
+            if summary.per_off_recent_high > .3:
+                send_to_channel = '<!channel> '
+
+            body = '{"text":"' + send_to_channel + 'Ticker = ' + summary.ticker + '; name = ' + summary.name + '; max = ' + str(summary.max_price) + '; min = ' + str(summary.min_price) + '; % down from recent high = {:.2%}'.format(summary.per_off_recent_high) + '"}'
+
+            conn = httplib.HTTPSConnection('hooks.slack.com') 
+            conn.request('POST', slack_url, body, headers)
+            response = conn.getresponse()
+            print response.status, response.reason
+        
+#        irc.send(irc_string)
    
-    irc.send('QUIT\r\n') 
+#    irc.send('QUIT\r\n') 

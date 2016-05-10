@@ -54,17 +54,9 @@ class ScreenScraper():
         cnx = None
         cursor = None
         try:
-#       	    cnx = mysql.connector.connect(user='jimbob', password='finance',
-#                                          host='localhost',
-#                                          database='finance')
-#            cursor = cnx.cursor()
-            
             # prepared statement for adding an equity snapshot
             insert_equity_snapshot = ('INSERT INTO `equity_snapshot` (`ticker`, `name`, `exchange`, `date`, `price`) VALUES (%s, %s, %s, %s, %s)')
 
-#            for equity in self.equities:
-#                data_equity = (equity.ticker, 'name', equity.exchange, '2016-04-25', equity.price)
-#                cursor.execute(insert_equity_snapshot, data_equity)
             cnx = MySQLdb.connect(host='localhost', # your host, usually localhost
                      user='jimbob', # your username
                      passwd='finance', # your password
