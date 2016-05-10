@@ -109,6 +109,7 @@ if __name__ == "__main__":
     stocks.append(Equity('NASDAQ', 'INTC'))
     stocks.append(Equity('NASDAQ', 'MSFT'))
     stocks.append(Equity('NYSE', 'UTX'))
+    stocks.append(Equity('NYSE', 'NEWR'))
 
     # Misc
     stocks.append(Equity('NYSE', 'SVU'))

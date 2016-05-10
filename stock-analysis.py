@@ -157,7 +157,7 @@ if __name__ == "__main__":
 #    irc.send('JOIN #pynerds\r\n')
 #    irc.send('PRIVMSG #pynerds :Your daily stock report coming up...\r\n')
 
-    f = open('security.properties', 'r')
+    f = open('/home/james/finance/security.properties', 'r')
     slack_url = f.readline().strip()
     print(slack_url)
     headers = {'Content-type': 'application/json'}
