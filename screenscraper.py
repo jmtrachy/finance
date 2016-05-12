@@ -4,6 +4,7 @@ import datetime
 import time
 import random
 from xml.dom.minidom import parse, parseString
+from argparse import ArgumentParser
 
 class ScreenScraper():
     def __init__(self, equities):
@@ -24,7 +25,7 @@ class ScreenScraper():
         response = h1.getresponse()
         return response.read()
 
-    def parse_equity(self, equity, screen_scrape):
+    def parse_equity(self, equity, screen_scrape, print_data=False):
         div_index = screen_scrape.index('<div id="sharebox-data"')
         temp_string = screen_scrape[div_index:]
 
@@ -42,8 +43,9 @@ class ScreenScraper():
         for child in children:
             field_name = child.attributes['itemprop'].value
             field_value = child.attributes['content'].value
+            if print_data:
+                print(field_name + ' = ' + field_value)
             if field_name == 'price':
-                print(equity.ticker + ' = ' + field_value)
                 equity.price = field_value
             elif field_name == 'name':
                 equity.name = field_value
@@ -87,68 +89,81 @@ class Equity():
 if __name__ == "__main__":
     stocks = []
 
-    # Energy
-    stocks.append(Equity('NASDAQ', 'SCTY'))
-    stocks.append(Equity('NYSE', 'TOT'))
-    stocks.append(Equity('NYSE', 'XOM'))
-    stocks.append(Equity('NYSE', 'CVX'))
-    stocks.append(Equity('NYSE', 'PSX'))
+    parser = ArgumentParser(description="Parses optional arguments")
+    parser.add_argument("-s", dest="stock", action="store", help="The ticker for a single stock.  If present only prints info, does not persist anything.")
+    parser.add_argument("-x", dest="exchange", action="store", help="The exchange of an individual stock.")
 
-    # Industrial
-    stocks.append(Equity('NYSE', 'GE'))
-    stocks.append(Equity('NYSE', 'MMM'))
-    stocks.append(Equity('NYSE', 'CAT'))
-    stocks.append(Equity('NYSE', 'DD'))
+    args = parser.parse_args()
 
-    # Technology 
-    stocks.append(Equity('NASDAQ', 'AKAM'))
-    stocks.append(Equity('NYSE', 'IBM'))
-    stocks.append(Equity('NYSE', 'SAP'))
-    stocks.append(Equity('NASDAQ', 'AAPL'))
-    stocks.append(Equity('NASDAQ', 'CSCO'))
-    stocks.append(Equity('NASDAQ', 'INTC'))
-    stocks.append(Equity('NASDAQ', 'MSFT'))
-    stocks.append(Equity('NYSE', 'UTX'))
-    stocks.append(Equity('NYSE', 'NEWR'))
+    if args.stock and args.exchange:
+        stock_to_check = Equity(args.exchange, args.stock)
+        ss = ScreenScraper(stocks)
+        screen_scrape = ss.request_equity(stock_to_check)
+        ss.parse_equity(stock_to_check, screen_scrape)
 
-    # Misc
-    stocks.append(Equity('NYSE', 'SVU'))
-    stocks.append(Equity('NYSE', 'DIS'))
-    stocks.append(Equity('NYSE', 'BA'))
-    stocks.append(Equity('NYSE', 'HD'))
-    stocks.append(Equity('NYSE', 'KO'))
-    stocks.append(Equity('NYSE', 'MCD'))
-    stocks.append(Equity('NYSE', 'NKE'))
-    stocks.append(Equity('NYSE', 'TRV'))
-    stocks.append(Equity('NYSE', 'WMT'))
+    else:
+        # Energy
+        stocks.append(Equity('NASDAQ', 'SCTY'))
+        stocks.append(Equity('NYSE', 'TOT'))
+        stocks.append(Equity('NYSE', 'XOM'))
+        stocks.append(Equity('NYSE', 'CVX'))
+        stocks.append(Equity('NYSE', 'PSX'))
 
-    # Automotive
-    stocks.append(Equity('NASDAQ', 'TSLA'))
-    stocks.append(Equity('ETR', 'VOW'))
-    stocks.append(Equity('NYSE', 'F'))
+        # Industrial
+        stocks.append(Equity('NYSE', 'GE'))
+        stocks.append(Equity('NYSE', 'MMM'))
+        stocks.append(Equity('NYSE', 'CAT'))
+        stocks.append(Equity('NYSE', 'DD'))
 
-    # Communications
-    stocks.append(Equity('NYSE', 'T'))
-    stocks.append(Equity('NYSE', 'VZ'))
+        # Technology
+        stocks.append(Equity('NASDAQ', 'AKAM'))
+        stocks.append(Equity('NYSE', 'IBM'))
+        stocks.append(Equity('NYSE', 'SAP'))
+        stocks.append(Equity('NASDAQ', 'AAPL'))
+        stocks.append(Equity('NASDAQ', 'CSCO'))
+        stocks.append(Equity('NASDAQ', 'INTC'))
+        stocks.append(Equity('NASDAQ', 'MSFT'))
+        stocks.append(Equity('NYSE', 'UTX'))
+        stocks.append(Equity('NYSE', 'NEWR'))
 
-    # Media
-    stocks.append(Equity('NASDAQ', 'NFLX'))
+        # Misc
+        stocks.append(Equity('NYSE', 'SVU'))
+        stocks.append(Equity('NYSE', 'DIS'))
+        stocks.append(Equity('NYSE', 'BA'))
+        stocks.append(Equity('NYSE', 'HD'))
+        stocks.append(Equity('NYSE', 'KO'))
+        stocks.append(Equity('NYSE', 'MCD'))
+        stocks.append(Equity('NYSE', 'NKE'))
+        stocks.append(Equity('NYSE', 'TRV'))
+        stocks.append(Equity('NYSE', 'WMT'))
 
-    # Financial
-    stocks.append(Equity('NYSE', 'JPM'))
-    stocks.append(Equity('NYSE', 'WFC'))
-    stocks.append(Equity('NYSE', 'GS'))
-    stocks.append(Equity('NYSE', 'AXP'))
-    stocks.append(Equity('NYSE', 'V'))
+        # Automotive
+        stocks.append(Equity('NASDAQ', 'TSLA'))
+        stocks.append(Equity('ETR', 'VOW'))
+        stocks.append(Equity('NYSE', 'F'))
 
-    # Pharma
-    stocks.append(Equity('NYSE', 'PFE'))
-    stocks.append(Equity('NYSE', 'MRK'))
+        # Communications
+        stocks.append(Equity('NYSE', 'T'))
+        stocks.append(Equity('NYSE', 'VZ'))
 
-    # Health
-    stocks.append(Equity('NYSE', 'JNJ'))
-    stocks.append(Equity('NYSE', 'UNH'))
-    stocks.append(Equity('NYSE', 'PG'))
+        # Media
+        stocks.append(Equity('NASDAQ', 'NFLX'))
 
-    ss = ScreenScraper(stocks)
-    ss.run()
+        # Financial
+        stocks.append(Equity('NYSE', 'JPM'))
+        stocks.append(Equity('NYSE', 'WFC'))
+        stocks.append(Equity('NYSE', 'GS'))
+        stocks.append(Equity('NYSE', 'AXP'))
+        stocks.append(Equity('NYSE', 'V'))
+
+        # Pharma
+        stocks.append(Equity('NYSE', 'PFE'))
+        stocks.append(Equity('NYSE', 'MRK'))
+
+        # Health
+        stocks.append(Equity('NYSE', 'JNJ'))
+        stocks.append(Equity('NYSE', 'UNH'))
+        stocks.append(Equity('NYSE', 'PG'))
+
+        ss = ScreenScraper(stocks)
+        ss.run()
