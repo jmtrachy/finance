@@ -51,13 +51,17 @@ class ScreenScraper():
                 equity.name = field_value
             elif field_name == 'quoteTime':
                 equity.quote_time = field_value
+            elif field_name == 'priceChange':
+                equity.price_change = field_value
+            elif field_name == 'priceChangePercent':
+                equity.price_change_percent = field_value
 
     def persist_equity(self, equity):
         cnx = None
         cursor = None
         try:
             # prepared statement for adding an equity snapshot
-            insert_equity_snapshot = ('INSERT INTO `equity_snapshot` (`ticker`, `name`, `exchange`, `date`, `price`) VALUES (%s, %s, %s, %s, %s)')
+            insert_equity_snapshot = ('INSERT INTO `equity_snapshot` (`ticker`, `name`, `exchange`, `date`, `price`, `price_change`, `price_change_percent`) VALUES (%s, %s, %s, %s, %s, %s, %s)')
 
             cnx = MySQLdb.connect(host='localhost', # your host, usually localhost
                      user='jimbob', # your username
@@ -71,7 +75,7 @@ class ScreenScraper():
             cursor.execute('SET character_set_connection=utf8;')
           
             date_str = equity.quote_time[:10]
-            data_equity = equity.ticker, equity.name, equity.exchange, date_str, equity.price
+            data_equity = equity.ticker, equity.name, equity.exchange, date_str, equity.price, equity.price_change, equity.price_change_percent
             print('Inserting ' + equity.ticker)
             cursor.execute(insert_equity_snapshot, data_equity)
                
@@ -92,6 +96,7 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Parses optional arguments")
     parser.add_argument("-s", dest="stock", action="store", help="The ticker for a single stock.  If present only prints info, does not persist anything.")
     parser.add_argument("-x", dest="exchange", action="store", help="The exchange of an individual stock.")
+    parser.add_argument("-p", dest="persist", action="store", help="Whether or not to persis this record.  Only used when quoting individual stocks.")
 
     args = parser.parse_args()
 
@@ -99,7 +104,10 @@ if __name__ == "__main__":
         stock_to_check = Equity(args.exchange, args.stock)
         ss = ScreenScraper(stocks)
         screen_scrape = ss.request_equity(stock_to_check)
-        ss.parse_equity(stock_to_check, screen_scrape)
+        ss.parse_equity(stock_to_check, screen_scrape, True)
+        
+        if args.persist:
+            ss.persist_equity(stock_to_check)
 
     else:
         # Energy

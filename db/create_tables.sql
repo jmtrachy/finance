@@ -5,5 +5,7 @@ CREATE TABLE IF NOT EXISTS `equity_snapshot` (
   `exchange` VARCHAR(10) NOT NULL,
   `date` DATE NOT NULL,
   `price` FLOAT(10,4) NOT NULL,
+  `price_change` FLOAT(10,4) NOT NULL,
+  `price_change_percent` FLOAT(10,4) NOT NULL,
   PRIMARY KEY (`snapshot_id`)
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8 COLLATE = utf8_bin
