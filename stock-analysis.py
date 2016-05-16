@@ -1,6 +1,8 @@
 import socket
 import httplib
 import MySQLdb
+import notification
+
 
 class Analyzer():
     def __init__(self, equities):
@@ -147,6 +149,8 @@ if __name__ == "__main__":
     analyzer = Analyzer(equities_to_analyze)
     analyzer.analyze()
 
+    notification.NotificationService.notify_slack(analyzer.summaries)
+
 #    network = 'www.orangeshovel.com'
 #    port = 6667
 #    irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -157,26 +161,6 @@ if __name__ == "__main__":
 #    irc.send('JOIN #pynerds\r\n')
 #    irc.send('PRIVMSG #pynerds :Your daily stock report coming up...\r\n')
 
-    f = open('/home/james/finance/security.properties', 'r')
-    slack_url = f.readline().strip()
-    print(slack_url)
-    headers = {'Content-type': 'application/json'}
-
-    for summary_key in analyzer.summaries:
-        summary = analyzer.summaries[summary_key]
-        #irc_string = 'PRIVMSG #pynerds :Ticker = ' + summary.ticker + '; name = ' + summary.name + '; max = ' + str(summary.max_price) + '; min = ' + str(summary.min_price) + '; % down from recent high = {:.2%}'.format(summary.per_off_recent_high) + '\r\n'
-        if summary.per_off_recent_high > .1:
-            send_to_channel = ''
-            if summary.per_off_recent_high > .3:
-                send_to_channel = '<!channel> '
-
-            body = '{"text":"' + send_to_channel + 'Ticker = ' + summary.ticker + '; name = ' + summary.name + '; max = ' + str(summary.max_price) + '; min = ' + str(summary.min_price) + '; % down from recent high = {:.2%}'.format(summary.per_off_recent_high) + '"}'
-
-            conn = httplib.HTTPSConnection('hooks.slack.com') 
-            conn.request('POST', slack_url, body, headers)
-            response = conn.getresponse()
-            print response.status, response.reason
-        
 #        irc.send(irc_string)
    
 #    irc.send('QUIT\r\n') 
