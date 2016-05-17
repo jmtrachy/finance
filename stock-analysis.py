@@ -1,5 +1,3 @@
-import socket
-import httplib
 import MySQLdb
 import notification
 
@@ -22,7 +20,7 @@ class Analyzer():
 
             summary.add_price_point(PricePoint(equity.price, equity.date))
 
-    def analyze(self):
+    def analyze(self, debug_mode = False):
         for summary_name in self.summaries:
             summary = self.summaries[summary_name]
 
@@ -60,11 +58,12 @@ class Analyzer():
             summary.max_price = max_price
             summary.per_off_recent_high = 1 - current_price / recent_high
 
-            print(summary.ticker + ' current price = ' + str(current_price))
-            print(summary.ticker + ' min price = ' + str(summary.min_price))
-            print(summary.ticker + ' max price = ' + str(summary.max_price))
-            print(summary.ticker + ' 200 day avg = {:.4}'.format(summary.two_hundred_day_avg))
-            print(summary.ticker + ' % down from recent high = {:.2%}'.format(summary.per_off_recent_high))
+            if debug_mode:
+                print(summary.ticker + ' current price = ' + str(current_price))
+                print(summary.ticker + ' min price = ' + str(summary.min_price))
+                print(summary.ticker + ' max price = ' + str(summary.max_price))
+                print(summary.ticker + ' 200 day avg = {:.4}'.format(summary.two_hundred_day_avg))
+                print(summary.ticker + ' % down from recent high = {:.2%}'.format(summary.per_off_recent_high))
             
 
 class PricePoint():
@@ -136,31 +135,8 @@ class DAO():
 
 if __name__ == "__main__":
     equities_to_analyze = DAO.get_equities() 
-    #equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-29', 30.79, 'Energy'))
-    #equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-28', 33.73, 'Energy'))
-    #equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-27', 33.70, 'Energy'))
-    #equities_to_analyze.append(Equity(1, 'SCTY', 'Solar City', 'NASDAQ', '2016-04-26', 33.46, 'Energy'))
-
-    #equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-29', 50.65, 'Energy'))
-    #equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-28', 51.01, 'Energy'))
-    #equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-27', 51.14, 'Energy'))
-    #equities_to_analyze.append(Equity(1, 'TOT', 'Total', 'NYSE', '2016-04-26', 49.77, 'Energy'))
-
     analyzer = Analyzer(equities_to_analyze)
     analyzer.analyze()
 
     notification.NotificationService.notify_slack(analyzer.summaries)
-
-#    network = 'www.orangeshovel.com'
-#    port = 6667
-#    irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#    irc.connect((network, port))
-
-#    irc.send('NICK analyst\r\n')
-#    irc.send('USER analyst analyst analyst :Python IRC\r\n')
-#    irc.send('JOIN #pynerds\r\n')
-#    irc.send('PRIVMSG #pynerds :Your daily stock report coming up...\r\n')
-
-#        irc.send(irc_string)
-   
-#    irc.send('QUIT\r\n') 
+    notification.NotificationService.notify_irc(analyzer.summaries)
