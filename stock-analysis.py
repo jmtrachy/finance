@@ -1,70 +1,81 @@
 import MySQLdb
 import notification
-
+import dal
 
 class Analyzer():
     def __init__(self, equities):
         self.equities = equities
         self.summaries = {}
-        self.breakout_equities()
+        #self.industry_summaries = {}
+        self.load_snapshots()
 
-        self.industry_summaries = {}
-
-    def breakout_equities(self):
+    def load_snapshots(self):
         for equity in self.equities:
-            if equity.ticker not in self.summaries:
-                summary = Summary(equity.ticker, equity.name, equity.exchange, equity.industry)
-                self.summaries[equity.ticker] = summary
-            else:
-                summary = self.summaries[equity.ticker]
+            equity.snapshots = dal.EquityDAO.get_equity_snapshots_by_ticker(equity.ticker, 50)
 
-            summary.add_price_point(PricePoint(equity.price, equity.date))
-
-    def analyze(self, debug_mode = False):
-        for summary_name in self.summaries:
-            summary = self.summaries[summary_name]
+    def analyze2(self, debug_mode=False):
+        for equity in self.equities:
 
             min_price = None
             max_price = None
-            two_hundred_date_average = 0
+            fifty_day_moving_sum = 0
+            fifty_day_moving_avg = 0
+            fifty_day_volatility_sum = 0
+            fifty_day_volatility_avg = 0
             num_price_points = 0
             current_price = None
             recent_high = 0.0
+            recent_low = 10000000000.00
 
-            for price_point in summary.price_points:
+            for snapshot in equity.snapshots:
 
-                current_price = price_point.price
+                current_price = snapshot.price
 
                 if min_price is None:
-                    min_price = price_point.price
-                elif min_price > price_point.price:
-                    min_price = price_point.price
+                    min_price = current_price
+                elif min_price > current_price:
+                    min_price = current_price
 
                 if max_price is None:
-                    max_price = price_point.price
-                elif max_price < price_point.price:
-                    max_price = price_point.price
+                    max_price = current_price
+                elif max_price < current_price:
+                    max_price = current_price
 
-                if num_price_points < 200:
-                    two_hundred_date_average += price_point.price
+                if num_price_points < 50:
+                    fifty_day_moving_sum += current_price
+                    fifty_day_volatility_sum += abs(snapshot.price_change_percent)
 
-                if recent_high < price_point.price and num_price_points < 100:
-                    recent_high = price_point.price
+                if num_price_points < 100:
+                    if recent_high < current_price:
+                        recent_high = current_price
+                    if recent_low > current_price:
+                        recent_low = current_price
 
                 num_price_points += 1
 
-            summary.two_hundred_day_avg = two_hundred_date_average / num_price_points
-            summary.min_price = min_price
-            summary.max_price = max_price
-            summary.per_off_recent_high = 1 - current_price / recent_high
+            if num_price_points > 50:
+                fifty_day_moving_avg = fifty_day_moving_sum / 50
+                fifty_day_volatility_avg = fifty_day_volatility_sum / 50
+            else:
+                fifty_day_moving_avg = fifty_day_moving_sum / num_price_points
+                fifty_day_volatility_avg = fifty_day_volatility_sum / num_price_points
+
+            #print('current price = ' + str(current_price))
+            #print('recent_high = ' + str(recent_high))
+            #print('recent_low = ' + str(recent_low))
+            per_off_recent_high = 100 * (1 - current_price / recent_high)
+            per_off_recent_low = 100 * (current_price / recent_low - 1)
 
             if debug_mode:
-                print(summary.ticker + ' current price = ' + str(current_price))
-                print(summary.ticker + ' min price = ' + str(summary.min_price))
-                print(summary.ticker + ' max price = ' + str(summary.max_price))
-                print(summary.ticker + ' 200 day avg = {:.4}'.format(summary.two_hundred_day_avg))
-                print(summary.ticker + ' % down from recent high = {:.2%}'.format(summary.per_off_recent_high))
-            
+                print('equity.equity_id = ' + str(equity.equity_id))
+                print('fifty_day_moving_avg = ' + str(fifty_day_moving_avg))
+                print('fifty_day_volatility_avg = ' + str(fifty_day_volatility_avg))
+                print('per_off_recent_high = ' + str(per_off_recent_high))
+                print('per_off_recent_low = ' + str(per_off_recent_low))
+
+            aggregate = dal.EquityAggregate(None, equity.equity_id, None, fifty_day_moving_avg, fifty_day_volatility_avg, per_off_recent_high, per_off_recent_low)
+            dal.EquityDAO.create_equity_aggregate(aggregate)
+
 
 class PricePoint():
     def __init__(self, price, date):
@@ -95,48 +106,10 @@ class Equity():
         self.industry = industry
 
 
-class DAO():
-    @staticmethod
-    def get_equities():
-        equities = []
-    
-        cnx = None
-        cursor = None
-        try:
-            # prepared statement for adding an equity snapshot
-            select_equities = 'SELECT snapshot_id, ticker, name, exchange, date, price FROM equity_snapshot ORDER BY snapshot_id ASC'
-
-            cnx = MySQLdb.connect(host='localhost', # your host, usually localhost
-                     user='jimbob', # your username
-                     passwd='finance', # your password
-                     db='finance') # name of the data base
-            # always do this to set mysqldb to use utf-8 encoding rather than latin-1
-            cnx.set_character_set('utf8')
-            cursor = cnx.cursor()
-            cursor.execute('SET NAMES utf8;')
-            cursor.execute('SET CHARACTER SET utf8;')
-            cursor.execute('SET character_set_connection=utf8;')
-
-            cursor.execute(select_equities)
-            results = cursor.fetchall()
-
-            for row in results:
-                equities.append(Equity(row[0], row[1], row[2], row[3], row[4], row[5], None))
-
-        except Exception as e:
-            print(type(e))
-            print(e)
-
-        finally:
-            cursor.close()
-            cnx.close()
-
-        return equities
-
 if __name__ == "__main__":
-    equities_to_analyze = DAO.get_equities() 
+    equities_to_analyze = dal.EquityDAO.get_equities()
     analyzer = Analyzer(equities_to_analyze)
-    analyzer.analyze()
+    analyzer.analyze2(debug_mode=True)
 
-    notification.NotificationService.notify_slack(analyzer.summaries)
-    notification.NotificationService.notify_irc(analyzer.summaries)
+    #notification.NotificationService.notify_slack(analyzer.summaries)
+    #notification.NotificationService.notify_irc(analyzer.summaries)
