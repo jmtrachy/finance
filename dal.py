@@ -48,6 +48,13 @@ class EquityDAO():
     def __hydrate_equity_snapshot(row):
         return EquitySnapshot(row[0], row[1], row[2], row[3], row[4], row[5])
 
+    __SELECT_EQUITY_AGGREGATE_BASE = 'SELECT ea.`aggregate_id`, ea.`equity_id`, ea.`date`, ea.`fifty_day_moving_avg`, ea.`fifty_day_volatility_avg`, ea.`per_off_recent_high`, ea.`per_off_recent_low` ' +\
+                                    '  FROM `equity_aggregate` ea '
+
+    @staticmethod
+    def __hydrate_equity_aggregate(row):
+        return EquityAggregate(row[0], row[1], row[2], row[3], row[4], row[5], row[6])
+
     @staticmethod
     def __get_connection():
         cnx = MySQLdb.connect(host='localhost', # your host, usually localhost
@@ -107,6 +114,19 @@ class EquityDAO():
         query_data = equity_aggregate.equity_id, equity_aggregate.fifty_day_moving_avg, equity_aggregate.fifty_day_volatility_avg, equity_aggregate.per_off_recent_high, equity_aggregate.per_off_recent_low
 
         EquityDAO.__execute_insert(insert_equity_aggregate, query_data, equity_aggregate)
+
+
+    @staticmethod
+    def get_top_equity_aggregate_by_id(equity_id):
+        select_query = EquityDAO.__SELECT_EQUITY_AGGREGATE_BASE + ' WHERE ea.`equity_id` = %s ORDER BY ea.`date` DESC LIMIT 1'
+        query_data = equity_id
+
+        list_of_aggregates = EquityDAO.__execute_select(select_query, query_data, EquityDAO.__hydrate_equity_aggregate)
+        aggregate_to_return = None
+        if len(list_of_aggregates) > 0:
+            aggregate_to_return = list_of_aggregates[0]
+
+        return aggregate_to_return
 
     @staticmethod
     def __execute_select(query, query_data, hydration_func):

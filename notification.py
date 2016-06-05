@@ -1,3 +1,4 @@
+import dal
 import httplib
 import random
 import socket
@@ -5,6 +6,15 @@ import time
 
 
 class NotificationService():
+
+    def __init__(self):
+        self.equities = dal.EquityDAO.get_equities()
+        self.aggregates = []
+        for equity in self.equities:
+            aggregate = dal.EquityDAO.get_top_equity_aggregate_by_id(equity.equity_id)
+            if aggregate is not None:
+                self.aggregates.append(aggregate)
+                print(str(aggregate.aggregate_id))
 
     @staticmethod
     def check_notification_type(summary):
@@ -72,3 +82,8 @@ class NotificationService():
                         time.sleep(random.randint(3, 5))
 
             irc.send('QUIT Goodbye\r\n')
+
+
+if __name__ == '__main__':
+    not_service = NotificationService()
+    

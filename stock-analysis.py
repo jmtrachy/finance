@@ -13,7 +13,7 @@ class Analyzer():
         for equity in self.equities:
             equity.snapshots = dal.EquityDAO.get_equity_snapshots_by_ticker(equity.ticker, 50)
 
-    def analyze2(self, debug_mode=False):
+    def analyze(self, debug_mode=False):
         for equity in self.equities:
 
             min_price = None
@@ -77,39 +77,10 @@ class Analyzer():
             dal.EquityDAO.create_equity_aggregate(aggregate)
 
 
-class PricePoint():
-    def __init__(self, price, date):
-        self.price = price
-        self.date = date
-
-
-class Summary():
-    def __init__(self, ticker, name, exchange, industry):
-        self.ticker = ticker
-        self.exchange = exchange
-        self.name = name
-        self.industry = industry
-        self.price_points = []
-
-    def add_price_point(self, price_point):
-        self.price_points.append(price_point)
-
-
-class Equity():
-    def __init__(self, snapshot_id, ticker, name, exchange, date, price, industry):
-        self.snapshot_id = snapshot_id
-        self.ticker = ticker
-        self.name = name
-        self.exchange = exchange
-        self.date = date
-        self.price = price
-        self.industry = industry
-
-
 if __name__ == "__main__":
     equities_to_analyze = dal.EquityDAO.get_equities()
     analyzer = Analyzer(equities_to_analyze)
-    analyzer.analyze2(debug_mode=True)
+    analyzer.analyze(debug_mode=True)
 
     #notification.NotificationService.notify_slack(analyzer.summaries)
     #notification.NotificationService.notify_irc(analyzer.summaries)
