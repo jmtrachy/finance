@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS `equity_snapshot` (
   `price` FLOAT(10,4) NOT NULL,
   `price_change` FLOAT(10,4) NOT NULL,
   `price_change_percent` FLOAT(10,4) NOT NULL,
+  `dividend` FLOAT(10,4) DEFAULT NULL,
+  `dividend_yield` FLOAT(10,4) DEFAULT NULL,
+  `pe` FLOAT(10,4) DEFAULT NULL,
   PRIMARY KEY (`snapshot_id`),
   FOREIGN KEY (`equity_id`) REFERENCES `equity`(`equity_id`)
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8 COLLATE = utf8_bin;

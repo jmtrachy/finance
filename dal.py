@@ -8,16 +8,21 @@ class Equity():
         self.name = name
         self.exchange = exchange 
         self.industry = industry
+        self.snapshots = []
+        self.aggregates = []
 
 
 class EquitySnapshot():
-    def __init__(self, snapshot_id, equity_id, date, price, price_change, price_change_percent):
+    def __init__(self, snapshot_id, equity_id, date, price, price_change, price_change_percent, dividend=None, dividend_yield=None, pe=None):
         self.snapshot_id = snapshot_id
         self.equity_id = equity_id
         self.date = date
         self.price = price
         self.price_change = price_change
         self.price_change_percent = price_change_percent
+        self.dividend = dividend
+        self.dividend_yield = dividend_yield
+        self.pe = pe
 
 
 class EquityAggregate():
@@ -29,6 +34,10 @@ class EquityAggregate():
         self.fifty_day_volatility_avg = fifty_day_volatility_avg
         self.per_off_recent_high = per_off_recent_high
         self.per_off_recent_low = per_off_recent_low 
+        self.ticker = None
+
+    def set_ticker(ticker):
+        self.ticker = ticker
 
 
 class EquityDAO():
@@ -41,12 +50,13 @@ class EquityDAO():
     def __hydrate_equity(row):
         return Equity(row[0], row[1], row[2], row[3], row[4])
 
-    __SELECT_EQUITY_SNAPSHOT_BASE = 'SELECT es.`snapshot_id`, es.`equity_id`, es.`date`, es.`price`, es.`price_change`, es.`price_change_percent` ' +\
+    __SELECT_EQUITY_SNAPSHOT_BASE = 'SELECT es.`snapshot_id`, es.`equity_id`, es.`date`, es.`price`, es.`price_change`, es.`price_change_percent` , es.`dividend`, ' +\
+                                    '       es.`dividend_yield`, es.`pe` ' +\
                                     '  FROM `equity_snapshot` es'
 
     @staticmethod
     def __hydrate_equity_snapshot(row):
-        return EquitySnapshot(row[0], row[1], row[2], row[3], row[4], row[5])
+        return EquitySnapshot(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])
 
     __SELECT_EQUITY_AGGREGATE_BASE = 'SELECT ea.`aggregate_id`, ea.`equity_id`, ea.`date`, ea.`fifty_day_moving_avg`, ea.`fifty_day_volatility_avg`, ea.`per_off_recent_high`, ea.`per_off_recent_low` ' +\
                                     '  FROM `equity_aggregate` ea '
@@ -60,8 +70,8 @@ class EquityDAO():
         cnx = MySQLdb.connect(host='localhost', # your host, usually localhost
                               user='jimbob', # your username
                               passwd='finance', # your password
-#                              db='finance') # name of the data base
-                              db='jt_test')
+                              db='finance') # name of the data base
+#                              db='jt_test')
         return cnx
 
     @staticmethod
@@ -103,8 +113,10 @@ class EquityDAO():
 
     @staticmethod
     def create_equity_snapshot(equity_snapshot):
-        insert_equity_snapshot = 'INSERT INTO `equity_snapshot` (`equity_id`, `date`, `price`, `price_change`, `price_change_percent`) VALUES (%s, %s, %s, %s, %s)'
-        query_data = equity_snapshot.equity_id, equity_snapshot.date, equity_snapshot.price, equity_snapshot.price_change, equity_snapshot.price_change_percent
+        insert_equity_snapshot = 'INSERT INTO `equity_snapshot` (`equity_id`, `date`, `price`, `price_change`, `price_change_percent`, `dividend`, `dividend_yield`, `pe`) ' +\
+                                 '                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)'
+        query_data = equity_snapshot.equity_id, equity_snapshot.date, equity_snapshot.price, equity_snapshot.price_change, equity_snapshot.price_change_percent, equity_snapshot.dividend, \
+                     equity_snapshot.dividend_yield, equity_snapshot.pe
 
         EquityDAO.__execute_insert(insert_equity_snapshot, query_data, equity_snapshot)
 
@@ -127,6 +139,11 @@ class EquityDAO():
             aggregate_to_return = list_of_aggregates[0]
 
         return aggregate_to_return
+
+    @staticmethod
+    def get_equity_aggregates_by_ticker(ticker, limit=50):
+        select_query = EquityDAO.__SELECT_EQUITY_AGGREGATE_BASE + ' JOIN `equity` e ON e.`equity_id` = ea.`equity_id` WHERE e.`ticker` = %s ORDER BY ea.`date` DESC LIMIT %s'
+        query_data = ticker, limit
 
     @staticmethod
     def __execute_select(query, query_data, hydration_func):
@@ -185,8 +202,20 @@ class EquityDAO():
 
     @staticmethod        
     def get_equities(limit=1000):
-        select_equities = EquityDAO.__SELECT_EQUITY_BASE + ' ORDER BY `name` ASC LIMIT %s'
+        select_equities = EquityDAO.__SELECT_EQUITY_BASE + ' ORDER BY `equity_id` ASC LIMIT %s'
         query_data = limit
 
         equities = EquityDAO.__execute_select(select_equities, query_data, EquityDAO.__hydrate_equity) 
         return equities
+
+    @staticmethod
+    def get_equity_with_most_recent_data(ticker, num_snapshots=5, num_aggregates=5):
+        equity = None
+        equities = EquityDAO.get_equity_by_ticker(ticker)
+
+        if len(equities) > 0:
+            equity = equities[0]
+            equity.snapshots = EquityDAO.get_equity_snapshots_by_ticker(ticker, num_snapshots)
+            equity.aggregates = EquityDAO.get_equity_aggregates_by_ticker(ticker, num_aggregates)
+
+        return equity

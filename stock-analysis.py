@@ -24,8 +24,8 @@ class Analyzer():
             fifty_day_volatility_avg = 0
             num_price_points = 0
             current_price = None
-            recent_high = 0.0
-            recent_low = 10000000000.00
+            recent_high = None
+            recent_low = None
 
             for snapshot in equity.snapshots:
 
@@ -45,6 +45,11 @@ class Analyzer():
                     fifty_day_moving_sum += current_price
                     fifty_day_volatility_sum += abs(snapshot.price_change_percent)
 
+                if recent_high is None:
+                    recent_high = current_price
+                if recent_low is None:
+                    recent_low = current_price
+
                 if num_price_points < 100:
                     if recent_high < current_price:
                         recent_high = current_price
@@ -60,14 +65,14 @@ class Analyzer():
                 fifty_day_moving_avg = fifty_day_moving_sum / num_price_points
                 fifty_day_volatility_avg = fifty_day_volatility_sum / num_price_points
 
-            #print('current price = ' + str(current_price))
-            #print('recent_high = ' + str(recent_high))
-            #print('recent_low = ' + str(recent_low))
             per_off_recent_high = 100 * (1 - current_price / recent_high)
             per_off_recent_low = 100 * (current_price / recent_low - 1)
 
             if debug_mode:
                 print('equity.equity_id = ' + str(equity.equity_id))
+                print('current price = ' + str(current_price))
+                print('recent_high = ' + str(recent_high))
+                print('recent_low = ' + str(recent_low))
                 print('fifty_day_moving_avg = ' + str(fifty_day_moving_avg))
                 print('fifty_day_volatility_avg = ' + str(fifty_day_volatility_avg))
                 print('per_off_recent_high = ' + str(per_off_recent_high))
@@ -79,8 +84,8 @@ class Analyzer():
 
 if __name__ == "__main__":
     equities_to_analyze = dal.EquityDAO.get_equities()
+#    equities_to_analyze = dal.EquityDAO.get_equity_by_ticker('SCTY')    
     analyzer = Analyzer(equities_to_analyze)
-    analyzer.analyze(debug_mode=True)
+    analyzer.analyze()
 
-    #notification.NotificationService.notify_slack(analyzer.summaries)
     #notification.NotificationService.notify_irc(analyzer.summaries)

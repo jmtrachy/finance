@@ -11,6 +11,7 @@ from dal import EquityDAO
 class ScreenScraper():
     def run(self):
         equities_to_scrape = EquityDAO.get_equities()
+        #equities_to_scrape = EquityDAO.get_equity_by_ticker('IBM')
 
         for equity in equities_to_scrape:
             screen_scrape = self.request_equity(equity)
@@ -57,7 +58,48 @@ class ScreenScraper():
             elif field_name == 'priceChangePercent':
                 price_change_percent = field_value
 
-        return dal.EquitySnapshot(None, equity.equity_id, quote_time, price, price_change, price_change_percent)
+        snapshot = dal.EquitySnapshot(None, equity.equity_id, quote_time, price, price_change, price_change_percent)
+
+        div_index = screen_scrape.index('<table class="snap-data">')
+        temp_string = screen_scrape[div_index:]
+        div_close_index = temp_string.index('</table>') + 8
+        xml_snippet = temp_string[:div_close_index].replace('&nbsp;', '')
+
+        self.parse_snap_data(xml_snippet, snapshot)
+
+        div_index = screen_scrape.index('<table class="snap-data">', div_close_index + div_index)
+        temp_string = screen_scrape[div_index:]
+        div_close_index = temp_string.index('</table>') + 8
+        xml_snippet = temp_string[:div_close_index].replace('&nbsp;', '')
+
+        self.parse_snap_data(xml_snippet, snapshot)
+
+        return snapshot
+
+    def parse_snap_data(self, xml_snippet, equity):
+        dom = parseString(xml_snippet)
+        children = dom.getElementsByTagName('tr')
+
+        for tr in children:
+            key = None
+            value = None
+            for td in tr.getElementsByTagName('td'):
+                td_class = td.getAttribute('class')
+                if td_class == 'key':
+                    key = td.firstChild.nodeValue.strip()
+                elif td_class == 'val':
+                    value = td.firstChild.nodeValue.strip()
+
+            if key is not None and value is not None:
+                if key == 'P/E':
+                    if value != '-':
+                        equity.pe = value
+                elif key == 'Div/yield':
+                    if value != '-':
+                        fields = value.split('/')
+                        equity.dividend = fields[0]
+                        equity.dividend_yield = fields[1]
+
 
     def persist_equity_snapshot(self, equity_snapshot):
         EquityDAO.create_equity_snapshot(equity_snapshot)

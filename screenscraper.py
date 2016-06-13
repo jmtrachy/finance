@@ -56,12 +56,54 @@ class ScreenScraper():
             elif field_name == 'priceChangePercent':
                 equity.price_change_percent = field_value
 
+        div_index = screen_scrape.index('<table class="snap-data">')
+        temp_string = screen_scrape[div_index:]
+        div_close_index = temp_string.index('</table>') + 8
+        xml_snippet = temp_string[:div_close_index].replace('&nbsp;', '')
+
+        self.parse_snap_data(xml_snippet, equity)
+
+        div_index = screen_scrape.index('<table class="snap-data">', div_close_index + div_index)
+        temp_string = screen_scrape[div_index:]
+        div_close_index = temp_string.index('</table>') + 8
+        xml_snippet = temp_string[:div_close_index].replace('&nbsp;', '')
+
+        self.parse_snap_data(xml_snippet, equity)
+
+    def parse_snap_data(self, xml_snippet, equity):
+        print(xml_snippet)
+
+        dom = parseString(xml_snippet)
+        children = dom.getElementsByTagName('tr')
+
+        for tr in children:
+            key = None
+            value = None
+            for td in tr.getElementsByTagName('td'):
+                td_class = td.getAttribute('class')
+                if td_class == 'key':
+                    key = td.firstChild.nodeValue.strip()
+                elif td_class == 'val':
+                    value = td.firstChild.nodeValue.strip()
+
+            if key is not None and value is not None:
+                if key == 'P/E':
+                    equity.pe = value
+                elif key == 'Div/yield':
+                    if value != '-':
+                        fields = value.split('/')
+                        equity.dividend = fields[0]
+                        equity.dividend_yield = fields[1]
+
+            print(key + ' = ' + value)
+        
+
     def persist_equity(self, equity):
         cnx = None
         cursor = None
         try:
             # prepared statement for adding an equity snapshot
-            insert_equity_snapshot = ('INSERT INTO `equity_snapshot` (`ticker`, `name`, `exchange`, `date`, `price`, `price_change`, `price_change_percent`) VALUES (%s, %s, %s, %s, %s, %s, %s)')
+            insert_equity_snapshot = ('INSERT INTO `equity_snapshot2` (`ticker`, `name`, `exchange`, `date`, `price`, `price_change`, `price_change_percent`) VALUES (%s, %s, %s, %s, %s, %s, %s)')
 
             cnx = MySQLdb.connect(host='localhost', # your host, usually localhost
                      user='jimbob', # your username
@@ -104,6 +146,7 @@ if __name__ == "__main__":
         stock_to_check = Equity(args.exchange, args.stock)
         ss = ScreenScraper(stocks)
         screen_scrape = ss.request_equity(stock_to_check)
+#        print(screen_scrape)
         ss.parse_equity(stock_to_check, screen_scrape, True)
         
         if args.persist:
