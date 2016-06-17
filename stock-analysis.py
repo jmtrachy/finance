@@ -29,32 +29,35 @@ class Analyzer():
 
             for snapshot in equity.snapshots:
 
-                current_price = snapshot.price
+                if current_price is None:
+                    current_price = snapshot.price
+
+                snap_price = snapshot.price
 
                 if min_price is None:
-                    min_price = current_price
-                elif min_price > current_price:
-                    min_price = current_price
+                    min_price = snap_price
+                elif min_price > snap_price:
+                    min_price = snap_price
 
                 if max_price is None:
-                    max_price = current_price
-                elif max_price < current_price:
-                    max_price = current_price
+                    max_price = snap_price 
+                elif max_price < snap_price:
+                    max_price = snap_price
 
                 if num_price_points < 50:
-                    fifty_day_moving_sum += current_price
+                    fifty_day_moving_sum += snap_price
                     fifty_day_volatility_sum += abs(snapshot.price_change_percent)
 
                 if recent_high is None:
-                    recent_high = current_price
+                    recent_high = snap_price
                 if recent_low is None:
-                    recent_low = current_price
+                    recent_low = snap_price
 
                 if num_price_points < 100:
-                    if recent_high < current_price:
-                        recent_high = current_price
-                    if recent_low > current_price:
-                        recent_low = current_price
+                    if recent_high < snap_price:
+                        recent_high = snap_price
+                    if recent_low > snap_price:
+                        recent_low = snap_price
 
                 num_price_points += 1
 
@@ -84,7 +87,6 @@ class Analyzer():
 
 if __name__ == "__main__":
     equities_to_analyze = dal.EquityDAO.get_equities()
-#    equities_to_analyze = dal.EquityDAO.get_equity_by_ticker('SCTY')    
     analyzer = Analyzer(equities_to_analyze)
     analyzer.analyze()
 

@@ -101,8 +101,9 @@ class EquityDAO():
     def get_equity_by_id(equity_id):
         select_equity_by_id = EquityDAO.__SELECT_EQUITY_BASE + ' WHERE `equity_id` = %s'
         query_data = equity_id
-        
-        return EquityDAO.__execute_select(select_equity_by_id, query_data, EquityDAO.__hydrate_equity)
+       
+        equities = EquityDAO.__execute_select(select_equity_by_id, query_data, EquityDAO.__hydrate_equity)
+        return equities[0]
 
     @staticmethod
     def create_equity(equity):
@@ -145,6 +146,8 @@ class EquityDAO():
         select_query = EquityDAO.__SELECT_EQUITY_AGGREGATE_BASE + ' JOIN `equity` e ON e.`equity_id` = ea.`equity_id` WHERE e.`ticker` = %s ORDER BY ea.`date` DESC LIMIT %s'
         query_data = ticker, limit
 
+        return EquityDAO.__execute_select(select_query, query_data, EquityDAO.__hydrate_equity_aggregate)
+
     @staticmethod
     def __execute_select(query, query_data, hydration_func):
         result_objs = []
@@ -171,7 +174,7 @@ class EquityDAO():
             print(type(e))
             print(e) 
 
-        finally:
+        finally: 
             cursor.close()
             cnx.close()
 
@@ -219,3 +222,10 @@ class EquityDAO():
             equity.aggregates = EquityDAO.get_equity_aggregates_by_ticker(ticker, num_aggregates)
 
         return equity
+
+    @staticmethod
+    def get_most_recent_snapshots(sort='dividend_yield'):
+        query = EquityDAO.__SELECT_EQUITY_SNAPSHOT_BASE + ' WHERE `snapshot_id` IN (SELECT MAX(`snapshot_id`) FROM `equity_snapshot` GROUP BY `equity_id`) ORDER BY %s' 
+        query_data = sort
+
+        return EquityDAO.__execute_select(query, query_data, EquityDAO.__hydrate_equity_snapshot)
