@@ -152,7 +152,7 @@ class EquityDAO():
     def __execute_select(query, query_data, hydration_func):
         result_objs = []
        
-        #print('Query = ' + query + '; query_data = ' + str(query_data)) 
+        print('Query = ' + query + '; query_data = ' + str(query_data)) 
         cnx = None
         cursor = None
 
@@ -224,8 +224,27 @@ class EquityDAO():
         return equity
 
     @staticmethod
-    def get_most_recent_snapshots(sort='dividend_yield'):
-        query = EquityDAO.__SELECT_EQUITY_SNAPSHOT_BASE + ' WHERE `snapshot_id` IN (SELECT MAX(`snapshot_id`) FROM `equity_snapshot` GROUP BY `equity_id`) ORDER BY %s' 
+    def get_dow_equities():
+        select_equities = EquityDAO.__SELECT_EQUITY_BASE + ' WHERE `dow` = 1'
+        equities = EquityDAO.__execute_select(select_equities, None, EquityDAO.__hydrate_equity)
+        print('num equities retrieved = ' + str(len(equities)))
+
+        return equities
+
+    @staticmethod
+    def get_most_recent_snapshots(equities, sort='dividend_yield'):
+        extra_where_clause = ''
+        if equities is not None and len(equities) > 0:
+            extra_where_clause = ' AND `equity_id` IN %s '
+
         query_data = sort
+        if extra_where_clause != '':
+            equity_ids = []
+            for equity in equities:
+                equity_ids.append(equity.equity_id)
+
+            query_data = equity_ids, sort
+
+        query = EquityDAO.__SELECT_EQUITY_SNAPSHOT_BASE + ' WHERE `snapshot_id` IN (SELECT MAX(`snapshot_id`) FROM `equity_snapshot` GROUP BY `equity_id`)' + extra_where_clause + ' ORDER BY %s' 
 
         return EquityDAO.__execute_select(query, query_data, EquityDAO.__hydrate_equity_snapshot)
