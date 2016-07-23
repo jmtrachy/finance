@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS `equity` (
   `exchange` VARCHAR(10) NOT NULL,
   `industry` VARCHAR(50),
   `dow` TINYINT(1) DEFAULT 0,
-  PRIMARY KEY (`equity_id`)
+  PRIMARY KEY (`equity_id`),
+  UNIQUE (`ticker`)
 ) ENGINE = InnoDB DEFAULT CHARACTER SET = utf8 COLLATE = utf8_bin;
 
 CREATE TABLE IF NOT EXISTS `equity_snapshot` (
