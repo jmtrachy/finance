@@ -20,7 +20,7 @@ while keep_running:
    if data.find('PING') != -1:
       irc.send('PONG ' + data.split() [ 1 ] + '\r\n')
    if data.find('@mule help') != -1:
-      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, div, drop and quit.\r\n')
+      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, div, drop, vol, tracked and quit.\r\n')
    if data.find('@mule quit') != -1:
       irc.send('PRIVMSG #pynerds :Ok bye.\r\n')
       irc.send('QUIT\r\n')
@@ -37,7 +37,7 @@ while keep_running:
         else:
             irc.send('PRIVMSG #pynerds :{}\r\n'.format(ticker))
             for s in equity.snapshots:
-                irc.send('PRIVMSG #pynerds : {0}; {1} ({2}%); dividend (yield): {3}({4}); P/E {5}\r\n'.format(s.price, s.price_change, s.price_change_percent, s.dividend, s.dividend_yield, s.pe))
+                irc.send('PRIVMSG #pynerds : {}; {} ({:.2f}%)...dividend (yield): {}({:.2f})...P/E {}\r\n'.format(s.price, s.price_change, s.price_change_percent, s.dividend, s.dividend_yield, s.pe))
 
             for ea in equity.aggregates:
                 irc.send('PRIVMSG #pynerds : fifty day moving avg: {0}; fifty day volatility avg: {1}; % off recent high: {2}; % off recent low: {3}\r\n'.format(ea.fifty_day_moving_avg, \
@@ -52,7 +52,7 @@ while keep_running:
       for j in range(0, 10):
          stock = equities[j]
          equity = EquityDAO.get_equity_by_id(stock.equity_id)
-         irc.send('PRIVMSG #pynerds :{0}. {1} yields {2} percent dividend\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
+         irc.send('PRIVMSG #pynerds :{}. {} yields {:.2f}%\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
    if data.find('@mule div') != -1:
       recent_snapshots = EquityDAO.get_most_recent_snapshots(None)
       equities = sorted(recent_snapshots, key=attrgetter('dividend_yield'), reverse=True)
@@ -62,7 +62,7 @@ while keep_running:
       for j in range(0, 10):
          stock = equities[j]
          equity = EquityDAO.get_equity_by_id(stock.equity_id)
-         irc.send('PRIVMSG #pynerds :{0}. {1} yields {2} percent dividend\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
+         irc.send('PRIVMSG #pynerds :{}. {} yields {:.2f}%\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
 
    if data.find('@mule drop') != -1:
       recent_aggregates = EquityDAO.get_recent_aggregates()
@@ -73,4 +73,27 @@ while keep_running:
       for j in range(0, 10):
          aggregate = aggregates[j]
          equity = EquityDAO.get_equity_by_id(aggregate.equity_id)
-         irc.send('PRIVMSG #pynerds :{0}. {1} is off {2} percent from its recent high\r\n'.format(j + 1, equity.ticker, aggregate.per_off_recent_high))
+         irc.send('PRIVMSG #pynerds :{}. {} is off {:.2f}% from its recent high\r\n'.format(j + 1, equity.ticker, aggregate.per_off_recent_high))
+
+   if data.find('@mule vol') != -1:
+      recent_aggregates = EquityDAO.get_recent_aggregates()
+      aggregates = sorted(recent_aggregates, key=attrgetter('fifty_day_volatility_avg'), reverse=True)
+
+      irc.send('PRIVMSG #pynerds :Most volatile stocks recently\r\n')
+
+      for j in range(0, 10):
+         aggregate = aggregates[j]
+         equity = EquityDAO.get_equity_by_id(aggregate.equity_id)
+         irc.send('PRIVMSG #pynerds :{}. {} on average moves {:.2f}% per day\r\n'.format(j + 1, equity.ticker, aggregate.fifty_day_volatility_avg))
+
+   if data.find('@mule tracked') != -1:
+      equities = sorted(EquityDAO.get_equities(), key=attrgetter('ticker'), reverse=False)
+
+      irc.send('PRIVMSG #pynerds :All currently tracked stocks\r\n')
+
+      equity_list = ''
+      for equity in equities:
+         equity_list += ', ' + equity.ticker
+
+      equity_list = equity_list[2:]
+      irc.send('PRIVMSG #pynerds :{}\r\n'.format(equity_list)) 
