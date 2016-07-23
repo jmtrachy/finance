@@ -1,4 +1,5 @@
 import MySQLdb
+import myconfig
 
 
 class Equity():
@@ -67,10 +68,14 @@ class EquityDAO():
 
     @staticmethod
     def __get_connection():
-        cnx = MySQLdb.connect(host='localhost', # your host, usually localhost
-                              user='jimbob', # your username
-                              passwd='finance', # your password
-                              db='finance') # name of the data base
+        host = myconfig.db_host
+        user = myconfig.db_user
+        passwd = myconfig.db_passwd
+        schema = myconfig.db_schema
+        cnx = MySQLdb.connect(host=host, # your host, usually localhost
+                              user=user, # your username
+                              passwd=passwd, # your password
+                              db=schema) # name of the data base
 #                              db='jt_test')
         return cnx
 

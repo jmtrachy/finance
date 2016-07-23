@@ -1,5 +1,8 @@
 .idea/
 
+# The environment configuration for this project
+myconfig.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

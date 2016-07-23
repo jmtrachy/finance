@@ -1,9 +1,12 @@
+import myconfig
 import socket
 from dal import EquityDAO
 from operator import attrgetter
 
-network = 'www.orangeshovel.com'
-port = 6667
+network = myconfig.mule_network
+port = myconfig.mule_port
+
+print('mule is connecting to ' + str(network) + ':' + str(port))
 irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
 irc.connect ( ( network, port ) )
 
