@@ -17,7 +17,7 @@ while keep_running:
    if data.find('PING') != -1:
       irc.send('PONG ' + data.split() [ 1 ] + '\r\n')
    if data.find('@mule help') != -1:
-      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, div and quit.\r\n')
+      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, div, drop and quit.\r\n')
    if data.find('@mule quit') != -1:
       irc.send('PRIVMSG #pynerds :Ok bye.\r\n')
       irc.send('QUIT\r\n')
@@ -60,3 +60,14 @@ while keep_running:
          stock = equities[j]
          equity = EquityDAO.get_equity_by_id(stock.equity_id)
          irc.send('PRIVMSG #pynerds :{0}. {1} yields {2} percent dividend\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
+
+   if data.find('@mule drop') != -1:
+      recent_aggregates = EquityDAO.get_recent_aggregates()
+      aggregates = sorted(recent_aggregates, key=attrgetter('per_off_recent_high'), reverse=True)
+
+      irc.send('PRIVMSG #pynerds :Biggers recent losers\r\n')
+
+      for j in range(0, 10):
+         aggregate = aggregates[j]
+         equity = EquityDAO.get_equity_by_id(aggregate.equity_id)
+         irc.send('PRIVMSG #pynerds :{0}. {1} is off {2} percent from its recent high\r\n'.format(j + 1, equity.ticker, aggregate.per_off_recent_high))
