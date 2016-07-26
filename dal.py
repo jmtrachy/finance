@@ -41,6 +41,12 @@ class EquityAggregate():
         self.ticker = ticker
 
 
+class EquityMeta():
+    def __init__(self, ticker, num_days_tracked):
+        self.ticker = ticker
+        self.num_days_tracked = num_days_tracked
+
+
 class EquityDAO():
 
     # The select equity query and hydration function for the query
@@ -61,6 +67,10 @@ class EquityDAO():
 
     __SELECT_EQUITY_AGGREGATE_BASE = 'SELECT ea.`aggregate_id`, ea.`equity_id`, ea.`date`, ea.`fifty_day_moving_avg`, ea.`fifty_day_volatility_avg`, ea.`per_off_recent_high`, ea.`per_off_recent_low` ' +\
                                     '  FROM `equity_aggregate` ea '
+
+    @staticmethod
+    def __hydrate_equity_meta(row):
+        return EquityMeta(row[0], row[1])
 
     @staticmethod
     def __hydrate_equity_aggregate(row):
@@ -258,3 +268,9 @@ class EquityDAO():
         query = EquityDAO.__SELECT_EQUITY_AGGREGATE_BASE + ' WHERE `aggregate_id` IN (SELECT MAX(`aggregate_id`) FROM `equity_aggregate` GROUP BY `equity_id`)'
 
         return EquityDAO.__execute_select(query, None, EquityDAO.__hydrate_equity_aggregate)
+
+    @staticmethod
+    def get_equity_meta():
+        query = 'SELECT e.`ticker`, COUNT(es.`equity_id`) AS theCount FROM `equity_snapshot` es JOIN `equity` e ON es.`equity_id` = e.`equity_id` GROUP BY es.`equity_id` ORDER BY e.`ticker` ASC'
+
+        return EquityDAO.__execute_select(query, None, EquityDAO.__hydrate_equity_meta)

@@ -20,7 +20,7 @@ while keep_running:
    if data.find('PING') != -1:
       irc.send('PONG ' + data.split() [ 1 ] + '\r\n')
    if data.find('@mule help') != -1:
-      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, div, drop, vol, tracked and quit.\r\n')
+      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, div, drop, vol, tracked, meta and quit.\r\n')
    if data.find('@mule quit') != -1:
       irc.send('PRIVMSG #pynerds :Ok bye.\r\n')
       irc.send('QUIT\r\n')
@@ -94,6 +94,18 @@ while keep_running:
       equity_list = ''
       for equity in equities:
          equity_list += ', ' + equity.ticker
+
+      equity_list = equity_list[2:]
+      irc.send('PRIVMSG #pynerds :{}\r\n'.format(equity_list)) 
+   
+   if data.find('@mule meta') != -1:
+      equities = EquityDAO.get_equity_meta()
+
+      irc.send('PRIVMSG #pynerds :Meta on all currently traded stocks.  Format: ticker (number of days tracked)\r\n')
+
+      equity_list = ''
+      for equity in equities:
+         equity_list += ', ' + equity.ticker + ' (' + str(equity.num_days_tracked) + ')'
 
       equity_list = equity_list[2:]
       irc.send('PRIVMSG #pynerds :{}\r\n'.format(equity_list)) 
