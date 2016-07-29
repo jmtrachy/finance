@@ -20,7 +20,7 @@ while keep_running:
    if data.find('PING') != -1:
       irc.send('PONG ' + data.split() [ 1 ] + '\r\n')
    if data.find('@mule help') != -1:
-      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, div, drop, vol, tracked, meta and quit.\r\n')
+      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, dow, div, drop, vol, tracked, meta and quit.\r\n')
    if data.find('@mule quit') != -1:
       irc.send('PRIVMSG #pynerds :Ok bye.\r\n')
       irc.send('QUIT\r\n')
@@ -53,6 +53,18 @@ while keep_running:
          stock = equities[j]
          equity = EquityDAO.get_equity_by_id(stock.equity_id)
          irc.send('PRIVMSG #pynerds :{}. {} yields {:.2f}%\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
+
+   if data.find('@mule dow') != -1:
+      equities = EquityDAO.get_dow_equities()
+      recent_snapshots = EquityDAO.get_most_recent_snapshots(equities)
+      recent_snapshots = sorted(recent_snapshots, key=attrgetter('price_change'), reverse=True)
+
+      j = 1
+      for snapshot in recent_snapshots:
+         equity = EquityDAO.get_equity_by_id(snapshot.equity_id)
+         irc.send('PRIVMSG #pynerds :{}. {} is at {}.  {:.2f}% from yesterday\r\n'.format(j, equity.ticker, snapshot.price, snapshot.price_change))
+         j += 1
+
    if data.find('@mule div') != -1:
       recent_snapshots = EquityDAO.get_most_recent_snapshots(None)
       equities = sorted(recent_snapshots, key=attrgetter('dividend_yield'), reverse=True)
