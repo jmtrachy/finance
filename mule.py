@@ -10,8 +10,8 @@ print('mule is connecting to ' + str(network) + ':' + str(port))
 irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
 irc.connect ( ( network, port ) )
 
-irc.send('NICK data_mule\r\n')
-irc.send('USER data_mule data_mule data_mule :Python IRC\r\n')
+irc.send('NICK mule\r\n')
+irc.send('USER mule mule mule :Python IRC\r\n')
 irc.send('JOIN #pynerds\r\n' )
 irc.send('PRIVMSG #pynerds :Here to serve you\r\n')
 keep_running = True
