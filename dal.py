@@ -3,7 +3,7 @@ import myconfig
 
 
 class Equity():
-    def __init__(self, equity_id, ticker, name, exchange, industry):
+    def __init__(self, equity_id, ticker, name, exchange, industry, dow):
         self.equity_id = equity_id
         self.ticker = ticker
         self.name = name
@@ -11,6 +11,7 @@ class Equity():
         self.industry = industry
         self.snapshots = []
         self.aggregates = []
+        self.dow = dow
 
 
 class EquitySnapshot():
@@ -50,12 +51,12 @@ class EquityMeta():
 class EquityDAO():
 
     # The select equity query and hydration function for the query
-    __SELECT_EQUITY_BASE = 'SELECT e.`equity_id`, e.`ticker`, e.`name`, e.`exchange`, e.`industry`' +\
+    __SELECT_EQUITY_BASE = 'SELECT e.`equity_id`, e.`ticker`, e.`name`, e.`exchange`, e.`industry`, e.`dow`' +\
                            '  FROM `equity` e'
 
     @staticmethod
     def __hydrate_equity(row):
-        return Equity(row[0], row[1], row[2], row[3], row[4])
+        return Equity(row[0], row[1], row[2], row[3], row[4], row[5])
 
     __SELECT_EQUITY_SNAPSHOT_BASE = 'SELECT es.`snapshot_id`, es.`equity_id`, es.`date`, es.`price`, es.`price_change`, es.`price_change_percent` , es.`dividend`, ' +\
                                     '       es.`dividend_yield`, es.`pe` ' +\
@@ -197,7 +198,7 @@ class EquityDAO():
 
     @staticmethod
     def __execute_insert(query, query_data, record):
-        #print('Query = ' + query + '; query_data = ' + str(query_data))
+        print('Query = ' + query + '; query_data = ' + str(query_data))
 
         cnx = None
         cursor = None

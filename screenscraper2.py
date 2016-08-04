@@ -14,10 +14,15 @@ class ScreenScraper():
         #equities_to_scrape = EquityDAO.get_equity_by_ticker('IBM')
 
         for equity in equities_to_scrape:
-            screen_scrape = self.request_equity(equity)
-            equity_snapshot = self.parse_equity(equity, screen_scrape)
-            self.persist_equity_snapshot(equity_snapshot)
-            time.sleep(random.randint(1, 10))
+            try:
+                screen_scrape = self.request_equity(equity)
+                equity_snapshot = self.parse_equity(equity, screen_scrape)
+                self.persist_equity_snapshot(equity_snapshot)
+                time.sleep(random.randint(1, 10))
+            except Exception as err:
+                print(type(err))
+                print(err.args)
+                print(err)
 
     def request_equity(self, equity):
         h1 = httplib.HTTPSConnection('www.google.com')
@@ -97,7 +102,10 @@ class ScreenScraper():
                 elif key == 'Div/yield':
                     if value != '-':
                         fields = value.split('/')
-                        equity.dividend = fields[0]
+                        if fields[0] == '-':
+                            equity.dividend = 0.0
+                        else:
+                            equity.dividend = fields[0]
                         equity.dividend_yield = fields[1]
 
 
