@@ -37,6 +37,8 @@ while keep_running:
         else:
             irc.send('PRIVMSG #pynerds :{}\r\n'.format(ticker))
             for s in equity.snapshots:
+                if s.dividend_yield is None:
+                    s.dividend_yield = 0 
                 irc.send('PRIVMSG #pynerds : {}; {} ({:.2f}%)...dividend (yield): {}({:.2f})...P/E {}\r\n'.format(s.price, s.price_change, s.price_change_percent, s.dividend, s.dividend_yield, s.pe))
 
             for ea in equity.aggregates:

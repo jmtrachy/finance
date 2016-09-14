@@ -168,7 +168,7 @@ class EquityDAO():
     def __execute_select(query, query_data, hydration_func):
         result_objs = []
        
-        #print('Query = ' + query + '; query_data = ' + str(query_data)) 
+        print('Query = ' + query + '; query_data = ' + str(query_data)) 
         cnx = None
         cursor = None
 
@@ -258,9 +258,9 @@ class EquityDAO():
             for equity in equities:
                 equity_ids.append(equity.equity_id)
 
-            query_data = equity_ids, sort
+            query_data = equity_ids, equity_ids, sort
 
-        query = EquityDAO.__SELECT_EQUITY_SNAPSHOT_BASE + ' WHERE `snapshot_id` IN (SELECT MAX(`snapshot_id`) FROM `equity_snapshot` GROUP BY `equity_id`)' + extra_where_clause + ' ORDER BY %s' 
+        query = EquityDAO.__SELECT_EQUITY_SNAPSHOT_BASE + ' WHERE `snapshot_id` IN (SELECT MAX(`snapshot_id`) FROM `equity_snapshot` WHERE `equity_id` IN %s GROUP BY `equity_id`)' + extra_where_clause + ' ORDER BY %s' 
 
         return EquityDAO.__execute_select(query, query_data, EquityDAO.__hydrate_equity_snapshot)
 
