@@ -269,10 +269,11 @@ class EquityDAO():
         return EquityDAO.__execute_select(query, query_data, EquityDAO.__hydrate_equity_snapshot)
 
     @staticmethod
-    def get_recent_aggregates():
-        query = EquityDAO.__SELECT_EQUITY_AGGREGATE_BASE + ' WHERE `aggregate_id` IN (SELECT MAX(`aggregate_id`) FROM `equity_aggregate` GROUP BY `equity_id`)'
+    def get_recent_aggregate(equity):
+        query = EquityDAO.__SELECT_EQUITY_AGGREGATE_BASE + ' WHERE `aggregate_id` IN (SELECT MAX(`aggregate_id`) FROM `equity_aggregate` WHERE `equity_id` = %s GROUP BY `equity_id`) AND `equity_id` = %s'
+        query_data = equity.equity_id, equity.equity_id
 
-        return EquityDAO.__execute_select(query, None, EquityDAO.__hydrate_equity_aggregate)
+        return EquityDAO.__execute_select(query, query_data, EquityDAO.__hydrate_equity_aggregate)
 
     @staticmethod
     def get_equity_meta():
