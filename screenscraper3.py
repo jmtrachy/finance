@@ -1,16 +1,16 @@
+__author__ = 'James Trachy'
+
 import dal
-import httplib
-import datetime
+import domain
+import webtest
 import time
 import random
-from xml.dom.minidom import parse, parseString
-from argparse import ArgumentParser
-from dal import EquityDAO
+from xml.dom.minidom import parseString
+
 
 class ScreenScraper():
     def run(self):
-        equities_to_scrape = EquityDAO.get_equities()
-        #equities_to_scrape = EquityDAO.get_equity_by_ticker('IBM')
+        equities_to_scrape = dal.EquityDAO.get_equities(1)
 
         for equity in equities_to_scrape:
             try:
@@ -24,12 +24,14 @@ class ScreenScraper():
                 print(err)
 
     def request_equity(self, equity):
-        h1 = httplib.HTTPSConnection('www.google.com')
-        equity_url = '/finance?q=' + equity.exchange + '%3A' + equity.ticker
-        h1.request("GET", equity_url)
+        req = webtest.HttpRequest()
+        req.method = webtest._method_GET
+        req.host = 'www.google.com'
+        req.ssl = True
+        req.url = '/finance?q=' + equity.exchange + '%3A' + equity.ticker
 
-        response = h1.getresponse()
-        return response.read()
+        response = webtest.WebService.send_request(req)
+        return response
 
     def parse_equity(self, equity, screen_scrape, print_data=False):
         div_index = screen_scrape.index('<div id="sharebox-data"')
@@ -62,7 +64,7 @@ class ScreenScraper():
             elif field_name == 'priceChangePercent':
                 price_change_percent = field_value
 
-        snapshot = dal.EquitySnapshot(None, equity.equity_id, quote_time, price, price_change, price_change_percent)
+        snapshot = domain.EquitySnapshot(None, equity.equity_id, quote_time, price, price_change, price_change_percent)
 
         div_index = screen_scrape.index('<table class="snap-data">')
         temp_string = screen_scrape[div_index:]
@@ -109,12 +111,13 @@ class ScreenScraper():
 
 
     def persist_equity_snapshot(self, equity_snapshot):
-        EquityDAO.create_equity_snapshot(equity_snapshot)
+        print('About to persist snapshot to service')
+        print('Snapshot = ' + str(equity_snapshot))
+        d = dao.DAO()
+        # d.create_snapshot({ "test": 'hi' })
+        d.create_snapshot(equity_snapshot)
+        # EquityDAO.create_equity_snapshot(equity_snapshot)
 
-class Equity():
-    def __init__(self, exchange, ticker):
-        self.exchange = exchange
-        self.ticker = ticker
 
 if __name__ == "__main__":
     ss = ScreenScraper()

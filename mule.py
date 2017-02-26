@@ -6,6 +6,22 @@ from operator import attrgetter
 network = myconfig.mule_network
 port = myconfig.mule_port
 
+def get_recent_snapshots(equities):
+   recent_snapshots = []
+   for equity in equities:
+      recent_snapshot = EquityDAO.get_most_recent_snapshots([equity])
+      for e in recent_snapshot:
+         recent_snapshots.append(e)
+
+   return recent_snapshots
+
+def get_recent_aggregates(equities):
+   aggregates = []
+   for equity in equities:
+      aggregates.append(EquityDAO.get_recent_aggregate(equity)[0])
+
+   return aggregates 
+
 print('mule is connecting to ' + str(network) + ':' + str(port))
 irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
 irc.connect ( ( network, port ) )
@@ -37,14 +53,15 @@ while keep_running:
         else:
             irc.send('PRIVMSG #pynerds :{}\r\n'.format(ticker))
             for s in equity.snapshots:
+                if s.dividend_yield is None:
+                    s.dividend_yield = 0 
                 irc.send('PRIVMSG #pynerds : {}; {} ({:.2f}%)...dividend (yield): {}({:.2f})...P/E {}\r\n'.format(s.price, s.price_change, s.price_change_percent, s.dividend, s.dividend_yield, s.pe))
 
             for ea in equity.aggregates:
                 irc.send('PRIVMSG #pynerds : fifty day moving avg: {0}; fifty day volatility avg: {1}; % off recent high: {2}; % off recent low: {3}\r\n'.format(ea.fifty_day_moving_avg, \
                          ea.fifty_day_volatility_avg, ea.per_off_recent_high, ea.per_off_recent_low))
    if data.find('@mule dod') != -1:
-      equities = EquityDAO.get_dow_equities()
-      recent_snapshots = EquityDAO.get_most_recent_snapshots(equities)
+      recent_snapshots = get_recent_snapshots(EquityDAO.get_dow_equities())
       equities = sorted(recent_snapshots, key=attrgetter('dividend_yield'), reverse=True)
      
       irc.send('PRIVMSG #pynerds :Dogs of the DOW\r\n')
@@ -55,8 +72,7 @@ while keep_running:
          irc.send('PRIVMSG #pynerds :{}. {} yields {:.2f}%\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
 
    if data.find('@mule dow') != -1:
-      equities = EquityDAO.get_dow_equities()
-      recent_snapshots = EquityDAO.get_most_recent_snapshots(equities)
+      recent_snapshots = get_recent_snapshots(EquityDAO.get_dow_equities())
       recent_snapshots = sorted(recent_snapshots, key=attrgetter('price_change'), reverse=True)
 
       j = 1
@@ -66,18 +82,20 @@ while keep_running:
          j += 1
 
    if data.find('@mule div') != -1:
-      recent_snapshots = EquityDAO.get_most_recent_snapshots(None)
+      recent_snapshots = get_recent_snapshots(EquityDAO.get_equities())
       equities = sorted(recent_snapshots, key=attrgetter('dividend_yield'), reverse=True)
      
       irc.send('PRIVMSG #pynerds :Top tracked dividend stocks\r\n')
+
+      if len(equities) > 0:
       
-      for j in range(0, 10):
-         stock = equities[j]
-         equity = EquityDAO.get_equity_by_id(stock.equity_id)
-         irc.send('PRIVMSG #pynerds :{}. {} yields {:.2f}%\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
+         for j in range(0, 10):
+            stock = equities[j]
+            equity = EquityDAO.get_equity_by_id(stock.equity_id)
+            irc.send('PRIVMSG #pynerds :{}. {} yields {:.2f}%\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
 
    if data.find('@mule drop') != -1:
-      recent_aggregates = EquityDAO.get_recent_aggregates()
+      recent_aggregates = get_recent_aggregates(EquityDAO.get_equities())
       aggregates = sorted(recent_aggregates, key=attrgetter('per_off_recent_high'), reverse=True)
 
       irc.send('PRIVMSG #pynerds :Biggers recent losers\r\n')
@@ -88,7 +106,7 @@ while keep_running:
          irc.send('PRIVMSG #pynerds :{}. {} is off {:.2f}% from its recent high\r\n'.format(j + 1, equity.ticker, aggregate.per_off_recent_high))
 
    if data.find('@mule vol') != -1:
-      recent_aggregates = EquityDAO.get_recent_aggregates()
+      recent_aggregates = get_recent_aggregates(EquityDAO.get_equities())
       aggregates = sorted(recent_aggregates, key=attrgetter('fifty_day_volatility_avg'), reverse=True)
 
       irc.send('PRIVMSG #pynerds :Most volatile stocks recently\r\n')

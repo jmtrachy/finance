@@ -198,7 +198,7 @@ class EquityDAO():
 
     @staticmethod
     def __execute_insert(query, query_data, record):
-        print('Query = ' + query + '; query_data = ' + str(query_data))
+        #print('Query = ' + query + '; query_data = ' + str(query_data))
 
         cnx = None
         cursor = None
@@ -248,27 +248,32 @@ class EquityDAO():
 
     @staticmethod
     def get_most_recent_snapshots(equities, sort='dividend_yield'):
-        extra_where_clause = ''
+        first_extra_where_clause = ''
+        second_extra_where_clause = ''
         if equities is not None and len(equities) > 0:
-            extra_where_clause = ' AND `equity_id` IN %s '
+            first_extra_where_clause = 'WHERE `equity_id` IN %s'
+            second_extra_where_clause = 'AND `equity_id` IN %s'
+            if len(equities) == 1:
+                equities.append(equities[0])
 
         query_data = sort
-        if extra_where_clause != '':
+        if first_extra_where_clause != '':
             equity_ids = []
             for equity in equities:
                 equity_ids.append(equity.equity_id)
 
-            query_data = equity_ids, sort
+            query_data = equity_ids, equity_ids, sort
 
-        query = EquityDAO.__SELECT_EQUITY_SNAPSHOT_BASE + ' WHERE `snapshot_id` IN (SELECT MAX(`snapshot_id`) FROM `equity_snapshot` GROUP BY `equity_id`)' + extra_where_clause + ' ORDER BY %s' 
+        query = EquityDAO.__SELECT_EQUITY_SNAPSHOT_BASE + ' WHERE `snapshot_id` IN (SELECT MAX(`snapshot_id`) FROM `equity_snapshot` ' + first_extra_where_clause + ' GROUP BY `equity_id`) ' + second_extra_where_clause + ' ORDER BY %s' 
 
         return EquityDAO.__execute_select(query, query_data, EquityDAO.__hydrate_equity_snapshot)
 
     @staticmethod
-    def get_recent_aggregates():
-        query = EquityDAO.__SELECT_EQUITY_AGGREGATE_BASE + ' WHERE `aggregate_id` IN (SELECT MAX(`aggregate_id`) FROM `equity_aggregate` GROUP BY `equity_id`)'
+    def get_recent_aggregate(equity):
+        query = EquityDAO.__SELECT_EQUITY_AGGREGATE_BASE + ' WHERE `aggregate_id` IN (SELECT MAX(`aggregate_id`) FROM `equity_aggregate` WHERE `equity_id` = %s GROUP BY `equity_id`) AND `equity_id` = %s'
+        query_data = equity.equity_id, equity.equity_id
 
-        return EquityDAO.__execute_select(query, None, EquityDAO.__hydrate_equity_aggregate)
+        return EquityDAO.__execute_select(query, query_data, EquityDAO.__hydrate_equity_aggregate)
 
     @staticmethod
     def get_equity_meta():
