@@ -1,5 +1,5 @@
 class Equity():
-    def __init__(self, equity_id, ticker, name, exchange, industry, dow):
+    def __init__(self, equity_id, ticker, name, exchange, industry, dow, sp=False):
         self.equity_id = equity_id
         self.ticker = ticker
         self.name = name
@@ -8,6 +8,7 @@ class Equity():
         self.snapshots = []
         self.aggregates = []
         self.dow = dow
+        self.sp = sp
 
 
 class EquitySnapshot():

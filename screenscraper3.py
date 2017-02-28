@@ -1,11 +1,12 @@
 __author__ = 'James Trachy'
 
+import random
+import time
+from xml.dom.minidom import parseString
+
 import dal
 import domain
 import webtest
-import time
-import random
-from xml.dom.minidom import parseString
 
 
 class ScreenScraper():
