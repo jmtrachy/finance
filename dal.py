@@ -108,7 +108,7 @@ class EquityDAO():
     @staticmethod
     def get_equity_by_ticker(ticker):
         select_equity_by_ticker = EquityDAO.__SELECT_EQUITY_BASE + ' WHERE `ticker` = %s'
-        query_data = ticker
+        query_data = [ticker]
 
         equities = EquityDAO.__execute_select(select_equity_by_ticker, query_data, EquityDAO.__hydrate_equity)
         return equities
@@ -116,7 +116,7 @@ class EquityDAO():
     @staticmethod
     def get_equity_by_id(equity_id):
         select_equity_by_id = EquityDAO.__SELECT_EQUITY_BASE + ' WHERE `equity_id` = %s'
-        query_data = equity_id
+        query_data = [equity_id]
        
         equities = EquityDAO.__execute_select(select_equity_by_id, query_data, EquityDAO.__hydrate_equity)
         return equities[0]
@@ -148,7 +148,7 @@ class EquityDAO():
     @staticmethod
     def get_top_equity_aggregate_by_id(equity_id):
         select_query = EquityDAO.__SELECT_EQUITY_AGGREGATE_BASE + ' WHERE ea.`equity_id` = %s ORDER BY ea.`date` DESC LIMIT 1'
-        query_data = equity_id
+        query_data = [equity_id]
 
         list_of_aggregates = EquityDAO.__execute_select(select_query, query_data, EquityDAO.__hydrate_equity_aggregate)
         aggregate_to_return = None
@@ -222,7 +222,7 @@ class EquityDAO():
     @staticmethod        
     def get_equities(limit=1000):
         select_equities = EquityDAO.__SELECT_EQUITY_BASE + ' ORDER BY `equity_id` ASC LIMIT %s'
-        query_data = limit
+        query_data = [limit]
 
         equities = EquityDAO.__execute_select(select_equities, query_data, EquityDAO.__hydrate_equity) 
         return equities
