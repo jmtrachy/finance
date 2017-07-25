@@ -3,6 +3,7 @@ import socket
 from dal import EquityDAO
 from operator import attrgetter
 
+password = myconfig.mule_password
 network = myconfig.mule_network
 port = myconfig.mule_port
 
@@ -26,6 +27,7 @@ print('mule is connecting to ' + str(network) + ':' + str(port))
 irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
 irc.connect ( ( network, port ) )
 
+irc.send('PASS ' + password + '\r\n')
 irc.send('NICK mule\r\n')
 irc.send('USER mule mule mule :Python IRC\r\n')
 irc.send('JOIN #pynerds\r\n' )
