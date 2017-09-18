@@ -17,15 +17,15 @@ class ScreenScraper():
                 screen_scrape = self.request_equity(equity)
                 equity_snapshot = self.parse_equity(equity, screen_scrape)
                 self.persist_equity_snapshot(equity_snapshot)
-                time.sleep(random.randint(1, 10))
+                time.sleep(random.randint(1, 3))
             except Exception as err:
                 print(type(err))
                 print(err.args)
                 print(err)
 
     def request_equity(self, equity):
-        h1 = httplib.HTTPSConnection('www.google.com')
-        equity_url = '/finance?q=' + equity.exchange + '%3A' + equity.ticker
+        h1 = httplib.HTTPSConnection('finance.google.com')
+        equity_url = '/finance?q=' + equity.exchange + ':' + equity.ticker
         h1.request("GET", equity_url)
 
         response = h1.getresponse()
