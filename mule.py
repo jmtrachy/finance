@@ -7,6 +7,7 @@ password = myconfig.mule_password
 network = myconfig.mule_network
 port = myconfig.mule_port
 all_equities = set()
+silenced = False
 
 def build_ticker_set():
    all_equities_raw = sorted(EquityDAO.get_equities(), key=attrgetter('ticker'), reverse=False)
@@ -46,7 +47,7 @@ while keep_running:
    if data.find('PING') != -1:
       irc.send('PONG ' + data.split() [ 1 ] + '\r\n')
    elif data.find('@mule help') != -1:
-      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, dow, div, drop, vol, tracked, meta and quit.\r\n')
+      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, dow, div, drop, vol, tracked, meta, silent, vocal, and quit.\r\n')
    elif data.find('@mule quit') != -1:
       irc.send('PRIVMSG #pynerds :Ok bye.\r\n')
       irc.send('QUIT\r\n')
@@ -149,11 +150,20 @@ while keep_running:
 
       equity_list = equity_list[2:]
       irc.send('PRIVMSG #pynerds :{}\r\n'.format(equity_list)) 
-   else:
+   elif data.find('@mule silent') != -1:
+      silenced = True
+      irc.send('PRIVMSG #pynerds :Ok I\'ll try to be a fly on the wall.\r\n')
+   elif data.find('@mule vocal') != -1:
+      silenced = False
+      irc.send('PRIVMSG #pynerds :Gag order rescinded.\r\n')
+   elif not silenced:
       if data is not None and data != '':
          all_words = data.split(' ')
+         count = 0
          for word in all_words:
-            word_stripped = word.strip(',').strip('.').upper()
-            if word_stripped in all_equities:
-               equity = EquityDAO.get_equity_with_most_recent_data(word_stripped, 1, 1)
-               irc.send('PRIVMSG #pynerds :{} last closed at {}\r\n'.format(equity.ticker, equity.snapshots[0].price))
+            if count > 2:
+               word_stripped = word.strip(':').strip(',').strip('.').strip('\n').strip('\r').upper()
+               if word_stripped in all_equities:
+                  equity = EquityDAO.get_equity_with_most_recent_data(word_stripped, 1, 1)
+                  irc.send('PRIVMSG #pynerds :{} last closed at {}\r\n'.format(equity.ticker, equity.snapshots[0].price))
+            count += 1
