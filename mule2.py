@@ -68,10 +68,10 @@ while keep_running:
                 irc.send('PRIVMSG #pynerds :I couldn\'t find {}\r\n'.format(ticker))
             else:
                 irc.send('PRIVMSG #pynerds :Found ticker {}\r\n'.format(ticker))
-                #for s in equity.snapshots:
-                #    if s.dividend_yield is None:
-                #        s.dividend_yield = 0
-                #    irc.send('PRIVMSG #pynerds : {}; {} ({:.2f}%)...dividend (yield): {}({:.2f})...P/E {}\r\n'.format(s.price, s.price_change, s.price_change_percent, s.dividend, s.dividend_yield, s.pe))
+                for s in equity.snapshots:
+                    if s.dividend_yield is None:
+                        s.dividend_yield = 0
+                    irc.send('PRIVMSG #pynerds : {}; {} {}%)...dividend (yield): {}({})...P/E {}\r\n'.format(s.price, s.price_change, s.price_change_percent, s.dividend, s.dividend_yield, s.pe))
 
                 #for ea in equity.aggregates:
                 #    irc.send('PRIVMSG #pynerds : fifty day moving avg: {0}; fifty day volatility avg: {1}; % off recent high: {2}; % off recent low: {3}\r\n'.format(ea.fifty_day_moving_avg,
