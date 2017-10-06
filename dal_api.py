@@ -53,7 +53,7 @@ class EquityDAO():
 
         if equity is not None:
             equity.snapshots = self.get_equity_snapshots_by_ticker(ticker, num_snapshots)
-        #    equity.aggregates = EquityDAO.get_equity_aggregates_by_ticker(ticker, num_aggregates)
+            equity.aggregates = self.get_equity_aggregates_by_ticker(ticker, num_aggregates)
 
         return equity
 
@@ -88,6 +88,22 @@ class EquityDAO():
                                       dividend, dividend_yield, pe)
         return snapshot
 
+    def convert_aggregate_json_to_model(self, aggregate_json):
+        aggregate = None
+
+        if aggregate_json is not None:
+            aggregate_id = aggregate_json.get('id')
+            equity_id = aggregate_json.get('equityId')
+            date = aggregate_json.get('date')
+            fifty_day_moving_avg = aggregate_json.get('fiftyDayMovingAverage')
+            fifty_day_volatility_avg = aggregate_json.get('fiftyDayVolatilityAverage')
+            per_off_recent_high = aggregate_json.get('perOffRecentHigh')
+            per_off_recent_low = aggregate_json.get('perOffRecentLow')
+
+            aggregate = EquityAggregate(aggregate_id, equity_id, date, fifty_day_moving_avg, fifty_day_volatility_avg,
+                                        per_off_recent_high, per_off_recent_low)
+        return aggregate
+
     def get_equity_snapshots_by_ticker(self, ticker, num_snapshots=5):
         req = HTTPRequest(self.host, self.port, '/v1/equities/{}/snapshots?limit={}'.format(ticker, num_snapshots))
         result_json = req.send_request()
@@ -106,3 +122,14 @@ class EquityDAO():
         equity = self.convert_equity_json_to_model(equity_json)
 
         return equity
+
+    def get_equity_aggregates_by_ticker(self, ticker, num_aggregates):
+        req = HTTPRequest(self.host, self.port, '/v1/equities/{}/aggregates?limit={}'.format(ticker, num_aggregates))
+        result_json = req.send_request()
+
+        aggregates = []
+        for a in result_json:
+            aggregate = self.convert_aggregate_json_to_model(a)
+            aggregates.append(aggregate)
+
+        return aggregates

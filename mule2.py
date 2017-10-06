@@ -73,6 +73,6 @@ while keep_running:
                         s.dividend_yield = 0
                     irc.send('PRIVMSG #pynerds : {}; {} {}%)...dividend (yield): {}({})...P/E {}\r\n'.format(s.price, s.price_change, s.price_change_percent, s.dividend, s.dividend_yield, s.pe))
 
-                #for ea in equity.aggregates:
-                #    irc.send('PRIVMSG #pynerds : fifty day moving avg: {0}; fifty day volatility avg: {1}; % off recent high: {2}; % off recent low: {3}\r\n'.format(ea.fifty_day_moving_avg,
-                #            ea.fifty_day_volatility_avg, ea.per_off_recent_high, ea.per_off_recent_low))
+                for ea in equity.aggregates:
+                    irc.send('PRIVMSG #pynerds : fifty day moving avg: {0}; fifty day volatility avg: {1}; % off recent high: {2}; % off recent low: {3}\r\n'.format(ea.fifty_day_moving_avg,
+                             ea.fifty_day_volatility_avg, ea.per_off_recent_high, ea.per_off_recent_low))
