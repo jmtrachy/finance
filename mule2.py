@@ -40,9 +40,20 @@ def get_stock_info(arguments):
                         ea.fifty_day_volatility_avg, ea.per_off_recent_high, ea.per_off_recent_low))
     return messages
 
+def get_tracked_stocks(arguments):
+    equities = equityDAO.get_all_equities()
+    list_of_equities = ''
+
+    for equity in equities:
+        list_of_equities += '{},'.format(equity.ticker)
+
+    return list_of_equities.strip(',')
+
 
 if __name__ == '__main__':
     bot = bot.Bot('mule2', 'Better than the first')
-    bot.add_complex_listener('stock', get_stock_info)
-    bot.connect(mule_network, mule_port, 'pynerds', mule_password)
 
+    bot.add_complex_listener('stock', get_stock_info)
+    bot.add_simple_listener('tracked', get_tracked_stocks)
+
+    bot.connect(mule_network, mule_port, 'pynerds', mule_password)

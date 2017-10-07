@@ -48,15 +48,6 @@ class EquityDAO():
         self.host = api_host
         self.port = api_port
 
-    def get_equity_with_most_recent_data(self, ticker, num_snapshots=5, num_aggregates=5):
-        equity = self.get_equity_by_ticker(ticker)
-
-        if equity is not None:
-            equity.snapshots = self.get_equity_snapshots_by_ticker(ticker, num_snapshots)
-            equity.aggregates = self.get_equity_aggregates_by_ticker(ticker, num_aggregates)
-
-        return equity
-
     def convert_equity_json_to_model(self, equity_json):
         equity = None
 
@@ -104,6 +95,17 @@ class EquityDAO():
                                         per_off_recent_high, per_off_recent_low)
         return aggregate
 
+    # Gets the base equity information along with the n daily snapshots and the last n daily aggregates
+    def get_equity_with_most_recent_data(self, ticker, num_snapshots=5, num_aggregates=1):
+        equity = self.get_equity_by_ticker(ticker)
+
+        if equity is not None:
+            equity.snapshots = self.get_equity_snapshots_by_ticker(ticker, num_snapshots)
+            equity.aggregates = self.get_equity_aggregates_by_ticker(ticker, num_aggregates)
+
+        return equity
+
+    # Retrieves n daily equity snapshots based on the desired ticker symbol
     def get_equity_snapshots_by_ticker(self, ticker, num_snapshots=5):
         req = HTTPRequest(self.host, self.port, '/v1/equities/{}/snapshots?limit={}'.format(ticker, num_snapshots))
         result_json = req.send_request()
@@ -115,6 +117,7 @@ class EquityDAO():
 
         return snapshots
 
+    # Retrieves the actual ticker information
     def get_equity_by_ticker(self, ticker):
         req = HTTPRequest(self.host, self.port, '/v1/equities/{}'.format(ticker))
         equity_json = req.send_request()
@@ -123,6 +126,7 @@ class EquityDAO():
 
         return equity
 
+    # Retrieves the last n daily aggregates for an individual ticker
     def get_equity_aggregates_by_ticker(self, ticker, num_aggregates):
         req = HTTPRequest(self.host, self.port, '/v1/equities/{}/aggregates?limit={}'.format(ticker, num_aggregates))
         result_json = req.send_request()
@@ -133,3 +137,15 @@ class EquityDAO():
             aggregates.append(aggregate)
 
         return aggregates
+
+    # Retrieves all equities tracked by the system
+    def get_all_equities(self):
+        req = HTTPRequest(self.host, self.port, '/v1/equities/')
+        result_json = req.send_request()
+
+        equities = []
+        for e in result_json:
+            equity = self.convert_equity_json_to_model(e)
+            equities.append(equity)
+
+        return equities
