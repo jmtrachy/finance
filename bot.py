@@ -1,123 +1,75 @@
-import myconfig
 import socket
-from dal import EquityDAO
-from operator import attrgetter
 
-network = myconfig.mule_network
-port = myconfig.mule_port
 
-print('mule is connecting to ' + str(network) + ':' + str(port))
-irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
-irc.connect ( ( network, port ) )
+class Bot():
+    def __init__(self, name, welcome_message=''):
+        self.name = name
+        self.len_name = len(name)
+        self.welcome_message = welcome_message
+        self.simple_listeners = {}
+        self.complex_listeners = {}
 
-irc.send('NICK mule\r\n')
-irc.send('USER mule mule mule :Python IRC\r\n')
-irc.send('JOIN #pynerds\r\n' )
-irc.send('PRIVMSG #pynerds :Here to serve you\r\n')
-keep_running = True
-while keep_running:
-   data = irc.recv ( 1024 )
-   if data.find('PING') != -1:
-      irc.send('PONG ' + data.split() [ 1 ] + '\r\n')
-   if data.find('@mule help') != -1:
-      irc.send('PRIVMSG #pynerds :I respond to stock <ticker>, dod, dow, div, drop, vol, tracked, meta and quit.\r\n')
-   if data.find('@mule quit') != -1:
-      irc.send('PRIVMSG #pynerds :Ok bye.\r\n')
-      irc.send('QUIT\r\n')
-      keep_running = False
-   if data.find('@mule stock') != -1:
-      tickers= data.split()
-      ticker = tickers[5].upper()
-      if ticker is None:
-        irc.send('PRIVMSG #pynerds :Ticker not found.\r\n')
-      else:
-        equity = EquityDAO.get_equity_with_most_recent_data(ticker, 5, 1)
-        if equity is None:
-            irc.send('PRIVMSG #pynerds :I couldn\'t find {}\r\n'.format(ticker))
-        else:
-            irc.send('PRIVMSG #pynerds :{}\r\n'.format(ticker))
-            for s in equity.snapshots:
-                irc.send('PRIVMSG #pynerds : {}; {} ({:.2f}%)...dividend (yield): {}({:.2f})...P/E {}\r\n'.format(s.price, s.price_change, s.price_change_percent, s.dividend, s.dividend_yield, s.pe))
+    def add_simple_listener(self, term, action):
+        self.simple_listeners[term] = action
 
-            for ea in equity.aggregates:
-                irc.send('PRIVMSG #pynerds : fifty day moving avg: {0}; fifty day volatility avg: {1}; % off recent high: {2}; % off recent low: {3}\r\n'.format(ea.fifty_day_moving_avg, \
-                         ea.fifty_day_volatility_avg, ea.per_off_recent_high, ea.per_off_recent_low))
-   if data.find('@mule dod') != -1:
-      equities = EquityDAO.get_dow_equities()
-      recent_snapshots = EquityDAO.get_most_recent_snapshots(equities)
-      equities = sorted(recent_snapshots, key=attrgetter('dividend_yield'), reverse=True)
-     
-      irc.send('PRIVMSG #pynerds :Dogs of the DOW\r\n')
-      
-      for j in range(0, 10):
-         stock = equities[j]
-         equity = EquityDAO.get_equity_by_id(stock.equity_id)
-         irc.send('PRIVMSG #pynerds :{}. {} yields {:.2f}%\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
+    def add_complex_listener(self, term, action):
+        self.complex_listeners[term] = action
 
-   if data.find('@mule dow') != -1:
-      equities = EquityDAO.get_dow_equities()
-      recent_snapshots = EquityDAO.get_most_recent_snapshots(equities)
-      recent_snapshots = sorted(recent_snapshots, key=attrgetter('price_change'), reverse=True)
+    def send_message(self, channel, message):
+        full_message = 'PRIVMSG #' + channel + ' :' + message.rstrip() + '\r\n'
+        self.irc.send(full_message.encode())
 
-      j = 1
-      for snapshot in recent_snapshots:
-         equity = EquityDAO.get_equity_by_id(snapshot.equity_id)
-         irc.send('PRIVMSG #pynerds :{}. {} is at {}.  {:.2f}% from yesterday\r\n'.format(j, equity.ticker, snapshot.price, snapshot.price_change))
-         j += 1
+    def connect(self, network, port, channel, password):
+        self.irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
+        self.irc.connect ( ( network, port ) )
 
-   if data.find('@mule div') != -1:
-      recent_snapshots = EquityDAO.get_most_recent_snapshots(None)
-      equities = sorted(recent_snapshots, key=attrgetter('dividend_yield'), reverse=True)
-     
-      irc.send('PRIVMSG #pynerds :Top tracked dividend stocks\r\n')
-      
-      for j in range(0, 10):
-         stock = equities[j]
-         equity = EquityDAO.get_equity_by_id(stock.equity_id)
-         irc.send('PRIVMSG #pynerds :{}. {} yields {:.2f}%\r\n'.format(j + 1, equity.ticker, stock.dividend_yield))
+        if password is not None:
+           self.irc.send(('PASS {}\n'.format(password)).encode())
+        nick_command = 'NICK {}\r\n'.format(self.name)
+        user_command = 'USER {} {} {} :Python IRC\r\n'.format(self.name, self.name, self.name)
+        join_command = 'JOIN #{}\r\n'.format(channel)
+        self.irc.send(nick_command.encode())
+        self.irc.send(user_command.encode())
+        self.irc.send(join_command.encode())
+        self.send_message(channel, self.welcome_message)
 
-   if data.find('@mule drop') != -1:
-      recent_aggregates = EquityDAO.get_recent_aggregates()
-      aggregates = sorted(recent_aggregates, key=attrgetter('per_off_recent_high'), reverse=True)
+        keep_running = True
+        while keep_running:
+            byte_data = self.irc.recv ( 1024 )
+            data = byte_data.decode().rstrip()
+            name_index = data.find('@' + self.name)
 
-      irc.send('PRIVMSG #pynerds :Biggers recent losers\r\n')
+            # If the message is not aimed at a bot simply ignore it
+            if name_index != -1:
 
-      for j in range(0, 10):
-         aggregate = aggregates[j]
-         equity = EquityDAO.get_equity_by_id(aggregate.equity_id)
-         irc.send('PRIVMSG #pynerds :{}. {} is off {:.2f}% from its recent high\r\n'.format(j + 1, equity.ticker, aggregate.per_off_recent_high))
+                # Ugly string parsing nonsense to get the command and arguments
+                end_name_index = name_index + self.len_name + 2
+                bot_command = data[end_name_index:]
+                first_space = bot_command.find(' ')
+                arguments = None
+                if first_space != -1:
+                    arguments = bot_command[first_space + 1:]
+                    bot_command = bot_command[:first_space].lower()
 
-   if data.find('@mule vol') != -1:
-      recent_aggregates = EquityDAO.get_recent_aggregates()
-      aggregates = sorted(recent_aggregates, key=attrgetter('fifty_day_volatility_avg'), reverse=True)
+                # Every message will be sent to the channel - might as well initialize this up here
+                message = None
 
-      irc.send('PRIVMSG #pynerds :Most volatile stocks recently\r\n')
+                # Quit if receiving the quit command - this is universal to all bots
+                if bot_command == 'quit':
+                    message = self.name + ' is quitting due to popular request.  Goodbye'
+                    keep_running = False
+                else:
+                    # Send the arguments (even if still None) to the assigned listener
+                    if bot_command in self.simple_listeners:
+                        message = self.simple_listeners[bot_command](arguments)
+                    elif bot_command in self.complex_listeners:
+                        messages = self.complex_listeners[bot_command](arguments)
+                        if messages is not None:
+                            for m in messages:
+                                self.send_message(channel, m)
+                    else:
+                        message = 'Command ' + bot_command + ' not found for ' + self.name
 
-      for j in range(0, 10):
-         aggregate = aggregates[j]
-         equity = EquityDAO.get_equity_by_id(aggregate.equity_id)
-         irc.send('PRIVMSG #pynerds :{}. {} on average moves {:.2f}% per day\r\n'.format(j + 1, equity.ticker, aggregate.fifty_day_volatility_avg))
-
-   if data.find('@mule tracked') != -1:
-      equities = sorted(EquityDAO.get_equities(), key=attrgetter('ticker'), reverse=False)
-
-      irc.send('PRIVMSG #pynerds :All currently tracked stocks\r\n')
-
-      equity_list = ''
-      for equity in equities:
-         equity_list += ', ' + equity.ticker
-
-      equity_list = equity_list[2:]
-      irc.send('PRIVMSG #pynerds :{}\r\n'.format(equity_list)) 
-   
-   if data.find('@mule meta') != -1:
-      equities = EquityDAO.get_equity_meta()
-
-      irc.send('PRIVMSG #pynerds :Meta on all currently traded stocks.  Format: ticker (number of days tracked)\r\n')
-
-      equity_list = ''
-      for equity in equities:
-         equity_list += ', ' + equity.ticker + ' (' + str(equity.num_days_tracked) + ')'
-
-      equity_list = equity_list[2:]
-      irc.send('PRIVMSG #pynerds :{}\r\n'.format(equity_list)) 
+                # Send the message no matter what has been created
+                if message is not None:
+                    self.send_message(channel, message)
