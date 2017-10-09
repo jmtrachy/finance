@@ -1,3 +1,5 @@
+__author__ = 'james trachy'
+
 import myconfig
 import bot
 from dal_api import EquityDAO
