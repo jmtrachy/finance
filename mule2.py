@@ -1,14 +1,18 @@
 __author__ = 'james trachy'
 
-import myconfig
+import argparse
 import bot
 from dal_api import EquityDAO
+import myconfig
+from operator import attrgetter
 
 mule_password = myconfig.mule_password
 mule_network = myconfig.mule_network
 mule_port = myconfig.mule_port
+mule_name = 'mule2'
 
 equityDAO = EquityDAO('localhost', 5000)
+
 
 def get_stock_info(arguments):
     if arguments is None:
@@ -42,6 +46,7 @@ def get_stock_info(arguments):
                         ea.fifty_day_volatility_avg, ea.per_off_recent_high, ea.per_off_recent_low))
     return messages
 
+
 def get_tracked_stocks(arguments):
     equities = equityDAO.get_all_equities()
     list_of_equities = ''
@@ -52,10 +57,54 @@ def get_tracked_stocks(arguments):
     return list_of_equities.strip(',')
 
 
+def get_dow_stocks(arguments):
+    equities = equityDAO.get_dow_equities()
+    dow_snapshots = []
+
+    for equity in equities:
+        snapshots = equityDAO.get_equity_snapshots_by_ticker(equity.ticker, 1)
+        if len(snapshots) > 0:
+            s = snapshots[0]
+            s.ticker = equity.ticker
+            dow_snapshots.append(s)
+
+    dow_snapshots = sorted(dow_snapshots, key=attrgetter('price_change_percent'), reverse=True)
+
+    message = ''
+    for s in dow_snapshots:
+        message += '{} ==> {}\n'.format(s.ticker, s.price_change_percent)
+
+    return message.strip('\n')
+
+
 if __name__ == '__main__':
-    bot = bot.Bot('mule2', 'Better than the first')
+    parser = argparse.ArgumentParser(description='Gathering arguments')
+    parser.add_argument('-t', '--test_mode', action='store_true', help='Do not connect to a server, just ask for commands')
+    args = parser.parse_args()
 
-    bot.add_complex_listener('stock', get_stock_info)
-    bot.add_simple_listener('tracked', get_tracked_stocks)
+    if args.test_mode:
+        command = None
+        while command != 'quit':
+            raw_input = input('What is your command?')
+            tokens = raw_input.split(' ')
+            command = tokens[0]
 
-    bot.connect(mule_network, mule_port, 'pynerds', mule_password)
+            if command == 'stock':
+                print(get_stock_info(tokens[1]))
+            elif command == 'tracked':
+                print(get_tracked_stocks(''))
+            elif command == 'help':
+                print('In test mode I support stock, tracked, help')
+            elif command == 'dow':
+                print('Printing out all dow stocks')
+                print(get_dow_stocks(None))
+
+    else:
+        bot = bot.Bot(mule_name, 'Better than the first')
+
+        bot.add_complex_listener('stock', get_stock_info)
+        bot.add_simple_listener('tracked', get_tracked_stocks)
+        bot.add_simple_listener('dow', get_dow_stocks)
+
+
+        bot.connect(mule_network, mule_port, 'pynerds', mule_password)

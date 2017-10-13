@@ -20,8 +20,8 @@ class Bot():
         self.irc.send(full_message.encode())
 
     def connect(self, network, port, channel, password):
-        self.irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
-        self.irc.connect ( ( network, port ) )
+        self.irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.irc.connect((network, port))
 
         if password is not None:
            self.irc.send(('PASS {}\n'.format(password)).encode())
@@ -35,7 +35,7 @@ class Bot():
 
         keep_running = True
         while keep_running:
-            byte_data = self.irc.recv ( 1024 )
+            byte_data = self.irc.recv(1024)
             data = byte_data.decode().rstrip()
             name_index = data.find('@' + self.name)
 

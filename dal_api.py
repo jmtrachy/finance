@@ -105,6 +105,18 @@ class EquityDAO():
 
         return equity
 
+    # Returns all stocks that are part of the DOW
+    def get_dow_equities(self):
+        req = HTTPRequest(self.host, self.port, '/v1/equities?filter=dow')
+        result_json = req.send_request()
+
+        equities = []
+        for e in result_json:
+            equity = self.convert_equity_json_to_model(e)
+            equities.append(equity)
+
+        return equities
+
     # Retrieves n daily equity snapshots based on the desired ticker symbol
     def get_equity_snapshots_by_ticker(self, ticker, num_snapshots=5):
         req = HTTPRequest(self.host, self.port, '/v1/equities/{}/snapshots?limit={}'.format(ticker, num_snapshots))
