@@ -101,6 +101,30 @@ def get_div_stocks(arguments):
     return message.strip('\n')
 
 
+def get_dod_stocks(arguments):
+    equities = equityDAO.get_dow_equities()
+    div_snapshots = []
+
+    for equity in equities:
+        snapshots = equityDAO.get_equity_snapshots_by_ticker(equity.ticker, 1)
+        if len(snapshots) > 0:
+            s = snapshots[0]
+            s.ticker = equity.ticker
+            if s.dividend_yield is not None:
+                div_snapshots.append(s)
+
+    div_snapshots = sorted(div_snapshots, key=attrgetter('dividend_yield'), reverse=True)
+
+    message = ''
+    count = 1
+    for s in div_snapshots:
+        if count <= 10:
+            message += '{} ==> {}\n'.format(s.ticker, s.dividend_yield)
+            count += 1
+
+    return message.strip('\n')
+
+
 def get_drop_stocks(arguments):
     equities = equityDAO.get_all_equities()
     drop_aggregates = []
@@ -146,6 +170,29 @@ def get_moon_stocks(arguments):
 
     return message.strip('\n')
 
+
+def get_vol_stocks(arguments):
+    equities = equityDAO.get_all_equities()
+    vol_aggregates = []
+
+    for equity in equities:
+        aggregates = equityDAO.get_equity_aggregates_by_ticker(equity.ticker, 1)
+        if len(aggregates) > 0:
+            a = aggregates[0]
+            a.ticker = equity.ticker
+            vol_aggregates.append(a)
+
+    vol_aggregates = sorted(vol_aggregates, key=attrgetter('fifty_day_volatility_avg'), reverse=True)
+
+    message = ''
+    count = 1
+    for a in vol_aggregates:
+        if count <= 10:
+            message += '{} ==> {}\n'.format(a.ticker, a.fifty_day_volatility_avg)
+            count += 1
+
+    return message.strip('\n')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Gathering arguments')
     parser.add_argument('-t', '--test_mode', action='store_true', help='Do not connect to a server, just ask for commands')
@@ -172,6 +219,10 @@ if __name__ == '__main__':
                 print(get_drop_stocks(None))
             elif command == 'moon':
                 print(get_moon_stocks(None))
+            elif command == 'vol':
+                print(get_vol_stocks(None))
+            elif command == 'dod':
+                print(get_dod_stocks(None))
 
     else:
         bot = bot.Bot(mule_name, 'Better than the first')
@@ -182,5 +233,6 @@ if __name__ == '__main__':
         bot.add_simple_listener('div', get_div_stocks)
         bot.add_simple_listener('drop', get_drop_stocks)
         bot.add_simple_listener('moon', get_moon_stocks)
+        bot.add_simple_listener('vol', get_vol_stocks)
 
         bot.connect(mule_network, mule_port, 'pynerds', mule_password)
