@@ -92,8 +92,11 @@ def get_div_stocks(arguments):
     div_snapshots = sorted(div_snapshots, key=attrgetter('dividend_yield'), reverse=True)
 
     message = ''
+    count = 1
     for s in div_snapshots:
-        message += '{} ==> {}\n'.format(s.ticker, s.dividend_yield)
+        if count <= 10:
+            message += '{} ==> {}\n'.format(s.ticker, s.dividend_yield)
+            count += 1
 
     return message.strip('\n')
 
