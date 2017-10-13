@@ -100,6 +100,29 @@ def get_div_stocks(arguments):
 
     return message.strip('\n')
 
+
+def get_drop_stocks(arguments):
+    equities = equityDAO.get_all_equities()
+    drop_aggregates = []
+
+    for equity in equities:
+        aggregates = equityDAO.get_equity_aggregates_by_ticker(equity.ticker, 1)
+        if len(aggregates) > 0:
+            a = aggregates[0]
+            a.ticker = equity.ticker
+            drop_aggregates.append(a)
+
+    drop_aggregates = sorted(drop_aggregates, key=attrgetter('per_off_recent_high'), reverse=True)
+
+    message = ''
+    count = 1
+    for a in drop_aggregates:
+        if count <= 10:
+            message += '{} ==> {} off its recent high\n'.format(a.ticker, a.per_off_recent_high)
+            count += 1
+
+    return message.strip('\n')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Gathering arguments')
     parser.add_argument('-t', '--test_mode', action='store_true', help='Do not connect to a server, just ask for commands')
@@ -122,6 +145,10 @@ if __name__ == '__main__':
                 print(get_dow_stocks(None))
             elif command == 'div':
                 print(get_div_stocks(None))
+            elif command == 'drop':
+                print(get_drop_stocks(None))
+            elif command == 'moon':
+                print(get_moon_stocks(None))
 
     else:
         bot = bot.Bot(mule_name, 'Better than the first')
@@ -130,5 +157,6 @@ if __name__ == '__main__':
         bot.add_simple_listener('tracked', get_tracked_stocks)
         bot.add_simple_listener('dow', get_dow_stocks)
         bot.add_simple_listener('div', get_div_stocks)
+        bot.add_simple_listener('drop', get_drop_stocks)
 
         bot.connect(mule_network, mule_port, 'pynerds', mule_password)
