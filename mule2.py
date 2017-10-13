@@ -77,6 +77,26 @@ def get_dow_stocks(arguments):
     return message.strip('\n')
 
 
+def get_div_stocks(arguments):
+    equities = equityDAO.get_all_equities()
+    div_snapshots = []
+
+    for equity in equities:
+        snapshots = equityDAO.get_equity_snapshots_by_ticker(equity.ticker, 1)
+        if len(snapshots) > 0:
+            s = snapshots[0]
+            s.ticker = equity.ticker
+            if s.dividend_yield is not None:
+                div_snapshots.append(s)
+
+    div_snapshots = sorted(div_snapshots, key=attrgetter('dividend_yield'), reverse=True)
+
+    message = ''
+    for s in div_snapshots:
+        message += '{} ==> {}\n'.format(s.ticker, s.dividend_yield)
+
+    return message.strip('\n')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Gathering arguments')
     parser.add_argument('-t', '--test_mode', action='store_true', help='Do not connect to a server, just ask for commands')
@@ -96,8 +116,9 @@ if __name__ == '__main__':
             elif command == 'help':
                 print('In test mode I support stock, tracked, help')
             elif command == 'dow':
-                print('Printing out all dow stocks')
                 print(get_dow_stocks(None))
+            elif command == 'div':
+                print(get_div_stocks(None))
 
     else:
         bot = bot.Bot(mule_name, 'Better than the first')
@@ -105,6 +126,6 @@ if __name__ == '__main__':
         bot.add_complex_listener('stock', get_stock_info)
         bot.add_simple_listener('tracked', get_tracked_stocks)
         bot.add_simple_listener('dow', get_dow_stocks)
-
+        bot.add_simple_listener('div', get_div_stocks)
 
         bot.connect(mule_network, mule_port, 'pynerds', mule_password)

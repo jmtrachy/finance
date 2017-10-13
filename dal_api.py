@@ -48,7 +48,8 @@ class EquityDAO():
         self.host = api_host
         self.port = api_port
 
-    def convert_equity_json_to_model(self, equity_json):
+    @staticmethod
+    def convert_equity_json_to_model(equity_json):
         equity = None
 
         if equity_json is not None:
@@ -62,7 +63,8 @@ class EquityDAO():
             equity = Equity(equity_id, ticker, name, exchange, industry, dow)
         return equity
 
-    def convert_snapshot_json_to_model(self, snapshot_json):
+    @staticmethod
+    def convert_snapshot_json_to_model(snapshot_json):
 
         if snapshot_json is not None:
             snapshot_id = snapshot_json.get('id')
@@ -79,7 +81,8 @@ class EquityDAO():
                                       dividend, dividend_yield, pe)
         return snapshot
 
-    def convert_aggregate_json_to_model(self, aggregate_json):
+    @staticmethod
+    def convert_aggregate_json_to_model(aggregate_json):
         aggregate = None
 
         if aggregate_json is not None:
