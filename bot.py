@@ -39,8 +39,13 @@ class Bot():
             data = byte_data.decode().rstrip()
             name_index = data.find('@' + self.name)
 
+            # Any IRC connection needs to respond with PONG when asked via a PING - otherwise the
+            # IRC server will disconnect
+            if data.find('PING') != -1:
+                self.send('PONG ' + data.split()[1] + '\r\n')
+
             # If the message is not aimed at a bot simply ignore it
-            if name_index != -1:
+            elif name_index != -1:
 
                 # Ugly string parsing nonsense to get the command and arguments
                 end_name_index = name_index + self.len_name + 2
