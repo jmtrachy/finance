@@ -70,11 +70,11 @@ def get_dow_stocks(arguments):
 
     dow_snapshots = sorted(dow_snapshots, key=attrgetter('price_change_percent'), reverse=True)
 
-    message = ''
+    messages = []
     for s in dow_snapshots:
-        message += '{} ==> {}\n'.format(s.ticker, s.price_change_percent)
+        messages.append('{} ==> {}\n'.format(s.ticker, s.price_change_percent))
 
-    return message.strip('\n')
+    return messages
 
 
 def get_div_stocks(arguments):
@@ -91,14 +91,14 @@ def get_div_stocks(arguments):
 
     div_snapshots = sorted(div_snapshots, key=attrgetter('dividend_yield'), reverse=True)
 
-    message = ''
+    messages = []
     count = 1
     for s in div_snapshots:
         if count <= 10:
-            message += '{} ==> {}\n'.format(s.ticker, s.dividend_yield)
+            messages.append('{} ==> {}\n'.format(s.ticker, s.dividend_yield))
             count += 1
 
-    return message.strip('\n')
+    return messages
 
 
 def get_dod_stocks(arguments):
@@ -115,14 +115,14 @@ def get_dod_stocks(arguments):
 
     div_snapshots = sorted(div_snapshots, key=attrgetter('dividend_yield'), reverse=True)
 
-    message = ''
+    messages = []
     count = 1
     for s in div_snapshots:
         if count <= 10:
-            message += '{} ==> {}\n'.format(s.ticker, s.dividend_yield)
+            messages.append('{} ==> {}\n'.format(s.ticker, s.dividend_yield))
             count += 1
 
-    return message.strip('\n')
+    return messages
 
 
 def get_drop_stocks(arguments):
@@ -138,14 +138,14 @@ def get_drop_stocks(arguments):
 
     drop_aggregates = sorted(drop_aggregates, key=attrgetter('per_off_recent_high'), reverse=True)
 
-    message = ''
+    messages = []
     count = 1
     for a in drop_aggregates:
         if count <= 10:
-            message += '{} ==> {} off its recent high\n'.format(a.ticker, a.per_off_recent_high)
+            messages.append('{} ==> {} off its recent high\n'.format(a.ticker, a.per_off_recent_high))
             count += 1
 
-    return message.strip('\n')
+    return messages
 
 
 def get_moon_stocks(arguments):
@@ -161,14 +161,14 @@ def get_moon_stocks(arguments):
 
     moon_aggregates = sorted(moon_aggregates, key=attrgetter('per_off_recent_low'), reverse=True)
 
-    message = ''
+    messages = []
     count = 1
     for a in moon_aggregates:
         if count <= 10:
-            message += '{} ==> {} off its recent low\n'.format(a.ticker, a.per_off_recent_low)
+            messages.append('{} ==> {} off its recent low\n'.format(a.ticker, a.per_off_recent_low))
             count += 1
 
-    return message.strip('\n')
+    return messages
 
 
 def get_vol_stocks(arguments):
@@ -184,14 +184,14 @@ def get_vol_stocks(arguments):
 
     vol_aggregates = sorted(vol_aggregates, key=attrgetter('fifty_day_volatility_avg'), reverse=True)
 
-    message = ''
+    messages = []
     count = 1
     for a in vol_aggregates:
         if count <= 10:
-            message += '{} ==> {}\n'.format(a.ticker, a.fifty_day_volatility_avg)
+            messages.append('{} ==> {}'.format(a.ticker, a.fifty_day_volatility_avg))
             count += 1
 
-    return message.strip('\n')
+    return messages
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Gathering arguments')
@@ -210,7 +210,7 @@ if __name__ == '__main__':
             elif command == 'tracked':
                 print(get_tracked_stocks(''))
             elif command == 'help':
-                print('In test mode I support stock, tracked, help')
+                print('In test mode I support stock, tracked, dow, div, drop, moon, vol, dod, and help')
             elif command == 'dow':
                 print(get_dow_stocks(None))
             elif command == 'div':
@@ -229,10 +229,11 @@ if __name__ == '__main__':
 
         bot.add_complex_listener('stock', get_stock_info)
         bot.add_simple_listener('tracked', get_tracked_stocks)
-        bot.add_simple_listener('dow', get_dow_stocks)
-        bot.add_simple_listener('div', get_div_stocks)
-        bot.add_simple_listener('drop', get_drop_stocks)
-        bot.add_simple_listener('moon', get_moon_stocks)
-        bot.add_simple_listener('vol', get_vol_stocks)
+        bot.add_complex_listener('dow', get_dow_stocks)
+        bot.add_complex_listener('div', get_div_stocks)
+        bot.add_complex_listener('drop', get_drop_stocks)
+        bot.add_complex_listener('moon', get_moon_stocks)
+        bot.add_complex_listener('vol', get_vol_stocks)
+        bot.add_complex_listener('dod', get_dod_stocks)
 
         bot.connect(mule_network, mule_port, 'pynerds', mule_password)

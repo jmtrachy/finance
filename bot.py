@@ -17,7 +17,10 @@ class Bot():
 
     def send_message(self, channel, message):
         full_message = 'PRIVMSG #' + channel + ' :' + message.rstrip() + '\r\n'
-        self.irc.send(full_message.encode())
+        self.send(full_message)
+
+    def send(self, message):
+        self.irc.send(message.encode())
 
     def connect(self, network, port, channel, password):
         self.irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -63,6 +66,14 @@ class Bot():
                 if bot_command == 'quit':
                     message = self.name + ' is quitting due to popular request.  Goodbye'
                     keep_running = False
+                elif bot_command == 'help':
+                    message = 'I support '
+                    for listener_key in self.simple_listeners.keys():
+                        message += '{}, '.format(listener_key)
+                    for listener_key in self.complex_listeners.keys():
+                        message += '{}, '.format(listener_key)
+                    message = message.strip(' ').strip(',')
+
                 else:
                     # Send the arguments (even if still None) to the assigned listener
                     if bot_command in self.simple_listeners:
